@@ -1,0 +1,106 @@
+:root {
+  --bs-secondary: #ffb524 !important;
+}
+
+/*** Hero Header ***/
+.hero-header {
+  background: linear-gradient(
+      rgba(248, 223, 173, 0.1),
+      rgba(248, 223, 173, 0.1)
+    ),
+    url(../../../public//images/hero-img.jpg);
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.carousel-item {
+  position: relative;
+}
+
+.carousel-item a {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 25px;
+  background: linear-gradient(rgba(255, 181, 36, 0.7), rgba(255, 181, 36, 0.7));
+}
+
+.carousel-control-next,
+.carousel-control-prev {
+  width: 48px;
+  height: 48px;
+  border-radius: 48px;
+  border: 1px solid var(--bs-white);
+  background: var(--bs-primary);
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.carousel-control-next {
+  margin-right: 20px;
+}
+
+.carousel-control-prev {
+  margin-left: 20px;
+}
+
+.page-header {
+  position: relative;
+  background: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)),
+    url(../img/cart-page-header-img.jpg);
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+@media (min-width: 992px) {
+  .hero-header,
+  .page-header {
+    margin-top: 152px !important;
+  }
+}
+
+@media (max-width: 992px) {
+  .hero-header,
+  .page-header {
+    margin-top: 97px !important;
+  }
+}
+/*** Hero Header end ***/
+
+/*** featurs Start ***/
+.featurs .featurs-item .featurs-icon {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  background: var(--bs-secondary);
+}
+
+.featurs .featurs-item .featurs-icon::after {
+  content: "";
+  width: 35px;
+  height: 35px;
+  background: var(--bs-secondary);
+  position: absolute;
+  bottom: -10px;
+  transform: translate(-50%);
+  transform: rotate(45deg);
+}
+#featureIcons {
+  color: #fff;
+  font-size: 3em;
+}
+/*** featurs End ***/
+
+/* nav item */
+.nav .nav-item > a {
+  text-decoration: none;
+  background-color: #f4f6f8 !important;
+}
+.nav .nav-item > a.active {
+  background-color: var(--bs-secondary) !important;
+  color: #fff !important;
+}

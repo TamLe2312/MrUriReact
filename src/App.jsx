@@ -5,7 +5,8 @@ import Home from "./pages";
 import { Toaster } from "sonner";
 import AdminHome from "./pages/admin/adminHome";
 import Dashboard from "./pages/admin/dashboard/dashboard";
-import Categories from "./pages/admin/categories/categories";
+import Users from "./pages/admin/users/users";
+import Products from "./pages/admin/products/products";
 
 function App() {
   return (
@@ -16,7 +17,8 @@ function App() {
         </Route>
         <Route path="/dashboard" element={<AdminHome />}>
           <Route index element={<Dashboard />} />
-          <Route path="categories" element={<Categories />} />
+          <Route path="users" element={<Users />} />
+          <Route path="products" element={<Products />} />
         </Route>
       </Routes>
       <Toaster position="top-right" expand={false} richColors />

@@ -1,0 +1,103 @@
+{
+  "posts": [
+    {
+      "id": "2",
+      "title": "another title",
+      "description": "demo 2",
+      "image": "https://cdn3.ivivu.com/2015/11/20-hinh-anh-tuyet-dep-ve-Viet-Nam-ivivu-2.jpg"
+    },
+    {
+      "id": "625e",
+      "title": "tuan",
+      "image": "https://cdn3.ivivu.com/2015/11/20-hinh-anh-tuyet-dep-ve-Viet-Nam-ivivu-1.jpg",
+      "description": "t"
+    },
+    {
+      "id": "1083",
+      "title": "tuan",
+      "image": "https://cdn3.ivivu.com/2015/11/20-hinh-anh-tuyet-dep-ve-Viet-Nam-ivivu-1.jpg",
+      "description": "t"
+    }
+  ],
+  "users": [
+    {
+      "id": "148a",
+      "username": "admin",
+      "email": "admin@gmail.com",
+      "password": "123456",
+      "role": "1"
+    },
+    {
+      "id": "2577",
+      "username": "user",
+      "email": "user@gmail.com",
+      "password": "123456",
+      "role": "0"
+    },
+    {
+      "id": "0bb3",
+      "username": "tamle23122004",
+      "email": "tamle23122004@gmail.com",
+      "role": "0",
+      "password": "23122004"
+    }
+  ],
+  "products": [
+    {
+      "id": "1",
+      "productName": "Keith Corner Sofa",
+      "image": "https://zago-store.vn/wp-content/uploads/2021/03/keith-black_1200x1200.jpg",
+      "stock": 20,
+      "price": 200000
+    },
+    {
+      "id": "2",
+      "productName": "Keith Corner Sofa",
+      "image": "https://zago-store.vn/wp-content/uploads/2021/03/keith-black_1200x1200.jpg",
+      "stock": 20,
+      "price": 200001
+    },
+    {
+      "id": "3",
+      "productName": "Keith Corner Sofa",
+      "image": "https://zago-store.vn/wp-content/uploads/2021/03/keith-black_1200x1200.jpg",
+      "stock": 20,
+      "price": 200002
+    },
+    {
+      "id": "4",
+      "productName": "Keith Corner Sofa",
+      "image": "https://zago-store.vn/wp-content/uploads/2021/03/keith-black_1200x1200.jpg",
+      "stock": 20,
+      "price": 200003
+    },
+    {
+      "id": "5",
+      "productName": "Keith Corner Sofa",
+      "image": "https://zago-store.vn/wp-content/uploads/2021/03/keith-black_1200x1200.jpg",
+      "stock": 20,
+      "price": 200004
+    },
+    {
+      "id": "6",
+      "productName": "Keith Corner Sofa",
+      "image": "https://zago-store.vn/wp-content/uploads/2021/03/keith-black_1200x1200.jpg",
+      "stock": 20,
+      "price": 200005
+    },
+    {
+      "id": "7",
+      "productName": "Keith Corner Sofa",
+      "image": "https://zago-store.vn/wp-content/uploads/2021/03/keith-black_1200x1200.jpg",
+      "stock": 20,
+      "price": 200006
+    },
+    {
+      "id": "8",
+      "productName": "Keith Corner Sofa",
+      "image": "https://zago-store.vn/wp-content/uploads/2021/03/keith-black_1200x1200.jpg",
+      "stock": 20,
+      "price": 200007
+    }
+  ]
+}

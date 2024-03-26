@@ -5,7 +5,7 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import ListSubheader from "@mui/material/ListSubheader";
 import DashboardIcon from "@mui/icons-material/Dashboard";
-import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
+import InventoryIcon from "@mui/icons-material/Inventory";
 import PeopleIcon from "@mui/icons-material/People";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import LayersIcon from "@mui/icons-material/Layers";
@@ -19,17 +19,17 @@ export const mainListItems = (
       </ListItemIcon>
       <ListItemText primary="Dashboard" />
     </ListItemButton>
-    <ListItemButton component={Link} to="/orders">
+    <ListItemButton component={Link} to="/dashboard/products">
       <ListItemIcon>
-        <ShoppingCartIcon />
+        <InventoryIcon />
       </ListItemIcon>
-      <ListItemText primary="Orders" />
+      <ListItemText primary="Products" />
     </ListItemButton>
-    <ListItemButton component={Link} to="/dashboard/categories">
+    <ListItemButton component={Link} to="/dashboard/users">
       <ListItemIcon>
         <PeopleIcon />
       </ListItemIcon>
-      <ListItemText primary="Categories" />
+      <ListItemText primary="Users" />
     </ListItemButton>
     <ListItemButton component={Link} to="/reports">
       <ListItemIcon>

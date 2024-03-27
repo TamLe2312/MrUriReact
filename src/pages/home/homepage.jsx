@@ -1,11 +1,27 @@
 import "./homepage.css";
 import Fruites from "../../../public/images/hero-img-1.png";
-import Products from "../../../public/images/fruite-item-5.jpg";
 import { FaCarSide } from "react-icons/fa6";
 import { MdOutlineSecurity } from "react-icons/md";
 import { FaExchangeAlt, FaPhoneAlt } from "react-icons/fa";
+import { Link } from "react-router-dom";
+import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
+import axios from "axios";
+import { useEffect, useState } from "react";
 
 const Homepage = () => {
+  const [products, setProducts] = useState();
+  const fetchProducts = async () => {
+    try {
+      const res = await axios.get(`http://localhost:3001/products`);
+      // console.log(res);
+      setProducts(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+  useEffect(() => {
+    fetchProducts();
+  }, []);
   return (
     <>
       {/* <!-- Hero Start --> */}
@@ -212,26 +228,33 @@ const Homepage = () => {
                 </ul>
               </div>
             </div>
-            <div className="tab-content">
+            <div className="tab-content productsContainer">
               <div id="tab-1" className="tab-pane fade show p-0 active">
-                <div className="row g-4">
-                  <div className="col-lg-12">
-                    <div className="row g-4">
-                      {Array(8)
-                        .fill(0)
-                        .map((value, index) => (
+                <div className="container">
+                  <div className="row justify-content-between">
+                    {products &&
+                      products.map((product) => {
+                        return (
                           <div
-                            className="col-md-6 col-lg-4 col-xl-3"
-                            key={index}
+                            className="col-md-3 productItem"
+                            key={product.id}
                           >
                             <div className="rounded position-relative fruit-item">
-                              <div className="fruit-img">
-                                <img
-                                  src={Products}
-                                  className="img-fluid w-100 rounded-top"
-                                  alt=""
-                                />
-                              </div>
+                              <a
+                                href={`product/${product.id}`}
+                                style={{
+                                  textDecoration: "none",
+                                  color: "#000",
+                                }}
+                              >
+                                <div className="product-img">
+                                  <img
+                                    src={product.image}
+                                    className="img-fluid rounded-top"
+                                    alt={product.productName}
+                                  />
+                                </div>
+                              </a>
                               <div
                                 className="text-white bg-secondary px-3 py-1 rounded position-absolute"
                                 style={{ top: "10px", left: "10px" }}
@@ -239,29 +262,37 @@ const Homepage = () => {
                                 Fruits
                               </div>
                               <div className="p-4 border border-secondary border-top-0 rounded-bottom">
-                                <h4>Grapes</h4>
+                                <Link
+                                  to={`product/${product.id}`}
+                                  style={{
+                                    textDecoration: "none",
+                                    color: "#000",
+                                  }}
+                                >
+                                  <h4>{product.productName}</h4>
+                                </Link>
                                 <p>
                                   Lorem ipsum dolor sit amet consectetur
                                   adipisicing elit sed do eiusmod tempor
                                   incididunt
                                 </p>
-                                <div className="d-flex justify-content-between flex-lg-wrap">
+                                <div className="d-flex flex-column gap-2">
                                   <p className="text-dark fs-5 fw-bold mb-0">
-                                    $4.99 / kg
+                                    {product.price} đ
                                   </p>
                                   <a
                                     href="#"
                                     className="btn border border-secondary rounded-pill px-3 text-primary"
                                   >
-                                    <i className="fa fa-shopping-bag me-2 text-primary"></i>{" "}
+                                    <ShoppingCartIcon />
                                     Add to cart
                                   </a>
                                 </div>
                               </div>
                             </div>
                           </div>
-                        ))}
-                    </div>
+                        );
+                      })}
                   </div>
                 </div>
               </div>

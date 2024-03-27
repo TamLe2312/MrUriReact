@@ -4,6 +4,7 @@ import { IoLocationOutline } from "react-icons/io5";
 import { MdOutlineMailOutline } from "react-icons/md";
 import { FaSearch, FaUser } from "react-icons/fa";
 import { FiShoppingCart } from "react-icons/fi";
+import { Link } from "react-router-dom";
 const Navbar = () => {
   return (
     <>
@@ -40,9 +41,9 @@ const Navbar = () => {
         </div>
         <div className="container px-0 navbarBottom">
           <nav className="navbar navbar-light bg-white navbar-expand-xl">
-            <a href="index.html" className="navbar-brand">
+            <Link to="/" className="navbar-brand">
               <h1 className="text-primary display-6">Mr Uri</h1>
-            </a>
+            </Link>
             <button
               className="navbar-toggler py-2 px-3"
               type="button"

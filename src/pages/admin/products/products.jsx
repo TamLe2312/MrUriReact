@@ -14,11 +14,16 @@ import "./products.css";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "sonner";
+import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { useEditedProduct } from "../../../context";
 
 const Products = () => {
   const [products, setProducts] = useState();
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const navigate = useNavigate();
+  const { setEditedProduct, setIsEdit } = useEditedProduct();
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -32,7 +37,7 @@ const Products = () => {
   const fetchProducts = async () => {
     try {
       const res = await axios.get(`http://localhost:3001/products`);
-      console.log(res);
+      // console.log(res);
       setProducts(res.data);
     } catch (err) {
       console.error(err);
@@ -41,7 +46,7 @@ const Products = () => {
 
   const handleDelete = async (id) => {
     try {
-      const res = await axios.delete(`http://localhost:3001/users/${id}`);
+      const res = await axios.delete(`http://localhost:3001/products/${id}`);
       if (res.status === 200) {
         toast.success("Delete Success");
         fetchProducts();
@@ -51,8 +56,11 @@ const Products = () => {
       console.error(err);
     }
   };
-  const handleEdit = () => {
-    console.log("edit");
+  const handleEdit = (product) => {
+    // console.log(product);
+    setEditedProduct(product);
+    setIsEdit(true);
+    navigate("/dashboard/products/add");
   };
 
   useEffect(() => {
@@ -60,7 +68,12 @@ const Products = () => {
   }, []);
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <p>Products</p>
+      <div className="handleAddContainer">
+        <p>Products</p>
+        <Link className="btn btn-success" to="/dashboard/products/add">
+          Add
+        </Link>
+      </div>
       <Grid container>
         <Grid item xs={12}>
           <Paper sx={{ width: "100%", overflow: "hidden" }}>

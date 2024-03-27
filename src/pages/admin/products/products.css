@@ -3,3 +3,9 @@
   height: 150px;
   object-fit: cover;
 }
+.handleAddContainer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 8px;
+}

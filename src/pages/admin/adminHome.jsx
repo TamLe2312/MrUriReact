@@ -19,7 +19,8 @@ import {
   mainListItems,
   secondaryListItems,
 } from "../admin/dashboard/listItems/listItems";
-import { Outlet } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 
 const drawerWidth = 240;
 
@@ -71,6 +72,19 @@ const Drawer = styled(MuiDrawer, {
 const defaultTheme = createTheme();
 
 const AdminHome = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (user) {
+      if (user.role != 1) {
+        navigate("/");
+      }
+    } else {
+      navigate("/");
+    }
+  });
+
   const [open, setOpen] = React.useState(true);
   const toggleDrawer = () => {
     setOpen(!open);

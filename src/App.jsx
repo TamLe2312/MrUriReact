@@ -13,6 +13,8 @@ const LazyHomepage = lazy(() => import("./pages/home/homepage"));
 const LazyProductDetail = lazy(() =>
   import("./pages/home/productDetail/productDetail")
 );
+const LazyLogin = lazy(() => import("./pages/home/login/login"));
+const LazySignUp = lazy(() => import("./pages/home/signup/signup"));
 import Loading from "./components/loading/Loading";
 
 function App() {
@@ -44,6 +46,22 @@ function App() {
             }
           />
         </Route>
+        <Route
+          path="/sign-in"
+          element={
+            <Suspense fallback={<Loading />}>
+              <LazyLogin />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/sign-up"
+          element={
+            <Suspense fallback={<Loading />}>
+              <LazySignUp />
+            </Suspense>
+          }
+        />
         <Route path="/dashboard" element={<AdminHome />}>
           <Route index element={<Dashboard />} />
           <Route path="users" element={<Users />} />

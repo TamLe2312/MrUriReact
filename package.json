@@ -16,6 +16,7 @@
     "@mui/material": "^5.15.14",
     "@mui/x-charts": "^7.0.0",
     "axios": "^1.6.8",
+    "bcryptjs": "^2.4.3",
     "bootstrap": "^5.3.3",
     "json-server": "^1.0.0-alpha.23",
     "ldrs": "^1.0.1",

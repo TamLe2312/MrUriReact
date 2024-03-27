@@ -40,6 +40,20 @@
       "email": "tamle23122004@gmail.com",
       "role": "0",
       "password": "23122004"
+    },
+    {
+      "id": "b83f",
+      "username": "admin100",
+      "email": "admin100@gmail.com",
+      "password": "23122004",
+      "role": "1"
+    },
+    {
+      "id": "8ae0",
+      "username": "tamle2312",
+      "email": "tamlmpk02957@fpt.edu.vn",
+      "password": "23122004",
+      "role": "0"
     }
   ],
   "products": [

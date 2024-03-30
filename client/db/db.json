@@ -1,0 +1,131 @@
+{
+  "posts": [
+    {
+      "id": "2",
+      "title": "another title",
+      "description": "demo 2",
+      "image": "https://cdn3.ivivu.com/2015/11/20-hinh-anh-tuyet-dep-ve-Viet-Nam-ivivu-2.jpg"
+    },
+    {
+      "id": "625e",
+      "title": "tuan",
+      "image": "https://cdn3.ivivu.com/2015/11/20-hinh-anh-tuyet-dep-ve-Viet-Nam-ivivu-1.jpg",
+      "description": "t"
+    },
+    {
+      "id": "1083",
+      "title": "tuan",
+      "image": "https://cdn3.ivivu.com/2015/11/20-hinh-anh-tuyet-dep-ve-Viet-Nam-ivivu-1.jpg",
+      "description": "t"
+    }
+  ],
+  "users": [
+    {
+      "id": "148a",
+      "username": "admin",
+      "email": "admin@gmail.com",
+      "password": "123456",
+      "role": "1"
+    },
+    {
+      "id": "2577",
+      "username": "user",
+      "email": "user@gmail.com",
+      "password": "123456",
+      "role": "0"
+    },
+    {
+      "id": "0bb3",
+      "username": "tamle23122004",
+      "email": "tamle23122004@gmail.com",
+      "role": "0",
+      "password": "23122004"
+    },
+    {
+      "id": "b83f",
+      "username": "admin100",
+      "email": "admin100@gmail.com",
+      "password": "23122004",
+      "role": "1"
+    },
+    {
+      "id": "8ae0",
+      "username": "tamle2312",
+      "email": "tamlmpk02957@fpt.edu.vn",
+      "password": "23122004",
+      "role": "0"
+    }
+  ],
+  "products": [
+    {
+      "id": "1",
+      "productName": "Keith Corner Sofa",
+      "image": "https://i.pinimg.com/564x/5b/de/6c/5bde6ccf9d335b796383d754e75ba19a.jpg",
+      "stock": "20",
+      "price": 200000
+    },
+    {
+      "id": "2",
+      "productName": "Keith Corner Sofa",
+      "image": "https://i.pinimg.com/564x/76/66/84/7666840a23cded4a54f7c0c089bce761.jpg",
+      "stock": 20,
+      "price": 200001
+    },
+    {
+      "id": "3",
+      "productName": "Keith Corner Sofa",
+      "image": "https://i.pinimg.com/564x/8a/4e/bb/8a4ebb5617e31e46bd99b04a39afe6be.jpg",
+      "stock": 20,
+      "price": 200002
+    },
+    {
+      "id": "4",
+      "productName": "Keith Corner Sofa",
+      "image": "https://i.pinimg.com/564x/76/c5/7f/76c57fea8f3105c517883d7bc40de051.jpg",
+      "stock": 20,
+      "price": 200003
+    },
+    {
+      "id": "5",
+      "productName": "Keith Corner Sofa",
+      "image": "https://i.pinimg.com/564x/50/54/84/50548499268b92b9bd0c4153994b41ac.jpg",
+      "stock": 20,
+      "price": 200004
+    },
+    {
+      "id": "6",
+      "productName": "Keith Corner Sofa",
+      "image": "https://i.pinimg.com/736x/42/96/68/429668bb3ef4ca8f7efde37f8886bfd3.jpg",
+      "stock": 20,
+      "price": 200005
+    },
+    {
+      "id": "7",
+      "productName": "Keith Corner Sofa",
+      "image": "https://i.pinimg.com/564x/c0/d5/1c/c0d51c075629833441f1e0fd18078311.jpg",
+      "stock": 20,
+      "price": 200006
+    },
+    {
+      "id": "43cb",
+      "productName": "Light Fall",
+      "image": "https://i.pinimg.com/564x/54/db/25/54db2573d0cfd1259d5301451ac7d722.jpg",
+      "stock": "12",
+      "price": "17300000"
+    },
+    {
+      "id": "4bb2",
+      "productName": "Sách gì đó của trung quốc",
+      "image": "https://i.pinimg.com/564x/42/cf/34/42cf347ee629d2c168a0ae0cbfd19c81.jpg",
+      "stock": "20",
+      "price": "111"
+    },
+    {
+      "id": "5e60",
+      "productName": "Howl's Moving Castle",
+      "image": "https://i.pinimg.com/564x/96/dc/fb/96dcfbe4a7b35070f73fd81df4a8737a.jpg",
+      "stock": "35",
+      "price": "14990000"
+    }
+  ]
+}

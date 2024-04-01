@@ -21,6 +21,7 @@ import {
 } from "../admin/dashboard/listItems/listItems";
 import { Outlet, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
+import * as request from "../../utilities/request";
 
 const drawerWidth = 240;
 
@@ -74,12 +75,23 @@ const defaultTheme = createTheme();
 const AdminHome = () => {
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("user"));
-    if (user) {
-      if (user.role != 1) {
-        navigate("/");
+  const fetchUser = async (token) => {
+    try {
+      const res = await request.postRequest("users/verifyToken", { token });
+      if (res.status === 200) {
+        if (res.data.results === "user") {
+          navigate("/");
+        }
       }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      fetchUser(token);
     } else {
       navigate("/");
     }

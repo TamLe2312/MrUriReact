@@ -9,8 +9,9 @@ import Typography from "@mui/material/Typography";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import axios from "axios";
+import * as request from "../../../utilities/request";
 import { toast } from "sonner";
+import Validation from "../../../components/validation/validation";
 
 // TODO remove, this demo shouldn't need to reset the theme.
 
@@ -20,63 +21,70 @@ const SignIn = () => {
   const [formData, setFormData] = useState({
     username: "",
     password: "",
-    rememberMe: false,
   });
+  const [errors, setErrors] = useState({});
+  const [rememberMe, setRememberMe] = useState(false);
+
   const navigate = useNavigate();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleCheckboxChange = (e) => {
-    const { name, checked } = e.target;
-    setFormData({ ...formData, [name]: checked });
-    if (checked) {
+  const handleChecked = (e) => {
+    const isChecked = e.target.checked;
+
+    if (isChecked) {
       localStorage.setItem("rememberMe", true);
+      setRememberMe(isChecked);
     } else {
       localStorage.removeItem("rememberMe");
+      setRememberMe(false);
     }
   };
 
+  const validate = () => {
+    const errors = Validation(formData, "usersLogin");
+    let isValid = true;
+
+    setErrors(errors);
+
+    if (
+      Object.keys(errors).length !== 0 ||
+      !Object.values(formData).every((value) => value !== "")
+    ) {
+      isValid = false;
+    }
+
+    return isValid;
+  };
+
   const handleSubmit = async () => {
-    const { username, password } = formData;
+    const isValid = validate();
 
-    try {
-      const res = await axios.get(
-        `http://localhost:3001/users?username=${username}`
-      );
-
-      if (res.data.length > 0) {
-        const user = res.data[0];
-        // Xác thực mật khẩu
-        if (user.password === password) {
-          const userData = {
-            id: user.id,
-            username: user.username,
-            role: user.role,
-          };
-          localStorage.setItem("user", JSON.stringify(userData));
-          if (user.role == 0) {
-            navigate("/");
-          } else {
-            navigate("/dashboard");
-          }
-          toast.success("Sign-in success");
-        } else {
-          toast.error("Invalid password");
+    if (isValid) {
+      const formDatas = new FormData();
+      formDatas.append("username", formData.username);
+      formDatas.append("password", formData.password);
+      try {
+        const res = await request.postRequest("users/sign-in", formDatas);
+        if (res.status === 200) {
+          toast.success(res.data.message);
+          localStorage.setItem("token", res.data.results.token);
+          navigate("/");
         }
-      } else {
-        toast.error("User not found");
+      } catch (err) {
+        // toast.error(err.response.data.message);
+        console.error(err);
       }
-    } catch (err) {
-      console.error(err);
-      toast.error("Sign-in failed");
+    } else {
+      console.log(errors);
     }
   };
   useEffect(() => {
     const rememberMe = localStorage.getItem("rememberMe");
     if (rememberMe) {
-      setFormData({ ...formData, rememberMe: true });
+      setRememberMe(true);
     }
   }, []);
 
@@ -122,23 +130,43 @@ const SignIn = () => {
                 <label>Username</label>
                 <input
                   type="text"
-                  className="form-control"
+                  className={
+                    errors.username ? "form-control is-invalid" : "form-control"
+                  }
                   id="username"
                   name="username"
                   value={formData.username}
                   onChange={handleChange}
                 />
+                {errors.username && (
+                  <div
+                    id="validationServerBrandFeedback"
+                    className="invalid-feedback"
+                  >
+                    {errors.username}
+                  </div>
+                )}
               </div>
               <div className="form-group">
                 <label>Password</label>
                 <input
                   type="password"
-                  className="form-control"
+                  className={
+                    errors.password ? "form-control is-invalid" : "form-control"
+                  }
                   id="password"
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
                 />
+                {errors.password && (
+                  <div
+                    id="validationServerBrandFeedback"
+                    className="invalid-feedback"
+                  >
+                    {errors.password}
+                  </div>
+                )}
               </div>
               <div className="form-check">
                 <input
@@ -146,8 +174,8 @@ const SignIn = () => {
                   className="form-check-input"
                   id="rememberMe"
                   name="rememberMe"
-                  checked={formData.rememberMe}
-                  onChange={handleCheckboxChange}
+                  checked={rememberMe}
+                  onChange={handleChecked}
                 />
                 <label className="form-check-label" htmlFor="rememberMe">
                   Check me out

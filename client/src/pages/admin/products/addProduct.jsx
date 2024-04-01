@@ -111,19 +111,17 @@ const AddProduct = () => {
       if (Object.keys(errors).length === 0) {
         try {
           const formDatas = new FormData();
-          formDatas.append("formDatas", JSON.stringify(formData));
+          formDatas.append("formDatas", formData);
 
           images.forEach((image) => {
             formDatas.append("images", image.image);
           });
 
           const response = await request.postRequest(`products/add`, formDatas);
-          console.log(response);
-
-          /*  if (response.status === 201) {
-      toast.success("Add Success");
-      navigate("/dashboard/products");
-    } */
+          if (response.status === 200) {
+            toast.success(response.data.message);
+            navigate("/dashboard/products");
+          }
         } catch (error) {
           console.error("Error adding post:", error);
           toast.error("Add Failed");

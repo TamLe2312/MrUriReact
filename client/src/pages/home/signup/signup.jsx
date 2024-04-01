@@ -10,7 +10,8 @@ import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { toast } from "sonner";
-import axios from "axios";
+import Validation from "../../../components/validation/validation";
+import * as request from "../../../utilities/request";
 
 // TODO remove, this demo shouldn't need to reset the theme.
 const defaultTheme = createTheme();
@@ -22,81 +23,55 @@ const SignUp = () => {
     password: "",
     confirmPassword: "",
   });
-  const navigate = useNavigate();
   const [acceptedAccess, setAcceptedAccess] = useState(false);
+  const [errors, setErrors] = useState({});
+  const navigate = useNavigate();
 
-  const isCheckExist = async () => {
-    if (formData.username !== "") {
-      const response = await axios.get(
-        `http://localhost:3001/users?username=${formData.username}`
-      );
-      if (response.status === 200) {
-        if (response.data.length > 0) {
-          return true;
-        }
-      }
-    }
-    if (formData.email !== "") {
-      const response = await axios.get(
-        `http://localhost:3001/users?email=${formData.email}`
-      );
-      if (response.status === 200) {
-        if (response.data.length > 0) {
-          return true;
-        }
-      }
-    }
-    return false;
-  };
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
-
-  const handleCheckboxChange = (e) => {
-    setAcceptedAccess(e.target.checked);
+  const handleChecked = (e) => {
+    const isChecked = e.target.checked;
+    setAcceptedAccess(isChecked);
   };
 
-  const passwordsMatchCheck = () => {
-    return formData.password === formData.confirmPassword;
+  const validate = () => {
+    const errors = Validation(formData, "users");
+    let isValid = true;
+
+    if (!acceptedAccess) {
+      errors.acceptedAccess = "Policy and acknowledge must be checked";
+    }
+
+    setErrors(errors);
+
+    if (
+      Object.keys(errors).length !== 0 ||
+      !Object.values(formData).every((value) => value !== "")
+    ) {
+      isValid = false;
+    }
+
+    return isValid;
   };
 
   const handleSubmit = async () => {
-    if (
-      formData.username !== "" &&
-      formData.email !== "" &&
-      formData.password !== "" &&
-      formData.confirmPassword !== "" &&
-      acceptedAccess
-    ) {
-      if (!(await isCheckExist())) {
-        if (passwordsMatchCheck()) {
-          try {
-            const userData = {
-              username: formData.username,
-              email: formData.email,
-              password: formData.password,
-              role: "0",
-            };
-            const response = await axios.post(
-              `http://localhost:3001/users`,
-              userData
-            );
-            if (response.status === 201) {
-              toast.success("Created Success");
-              navigate("/sign-in");
-            }
-          } catch (error) {
-            console.error("Error:", error);
-            toast.error("Created Fail");
-          }
-        } else {
-          toast.success("Password must be same");
+    const isValid = validate();
+
+    if (isValid) {
+      const formDatas = new FormData();
+      formDatas.append("username", formData.username);
+      formDatas.append("email", formData.email);
+      formDatas.append("password", formData.password);
+      try {
+        const res = await request.postRequest("users/sign-up", formDatas);
+        if (res.status === 200) {
+          toast.success(res.data.message);
+          navigate("/sign-in");
         }
-      } else {
-        toast.error("Username or Email existed");
+      } catch (err) {
+        toast.error(err.response.data.message);
       }
-    } else {
-      toast.error("All fields required");
     }
   };
 
@@ -142,53 +117,108 @@ const SignUp = () => {
                 <label>Username</label>
                 <input
                   type="text"
-                  className="form-control"
+                  className={
+                    errors.username ? "form-control is-invalid" : "form-control"
+                  }
                   id="username"
                   name="username"
                   onChange={handleChange}
                 />
+                {errors.username && (
+                  <div
+                    id="validationServerBrandFeedback"
+                    className="invalid-feedback"
+                  >
+                    {errors.username}
+                  </div>
+                )}
               </div>
               <div className="form-group">
                 <label>Email</label>
                 <input
                   type="text"
-                  className="form-control"
+                  className={
+                    errors.email ? "form-control is-invalid" : "form-control"
+                  }
                   id="email"
                   name="email"
                   onChange={handleChange}
                 />
+                {errors.email && (
+                  <div
+                    id="validationServerBrandFeedback"
+                    className="invalid-feedback"
+                  >
+                    {errors.email}
+                  </div>
+                )}
               </div>
               <div className="form-group">
                 <label>Password</label>
                 <input
                   type="password"
-                  className="form-control"
+                  className={
+                    errors.password ? "form-control is-invalid" : "form-control"
+                  }
                   id="password"
                   name="password"
                   onChange={handleChange}
                 />
+                {errors.password && (
+                  <div
+                    id="validationServerBrandFeedback"
+                    className="invalid-feedback"
+                  >
+                    {errors.password}
+                  </div>
+                )}
               </div>
               <div className="form-group">
                 <label>Confirm Password</label>
                 <input
                   type="password"
-                  className="form-control"
+                  className={
+                    errors.confirmPassword
+                      ? "form-control is-invalid"
+                      : "form-control"
+                  }
                   id="confirmPassword"
                   name="confirmPassword"
                   onChange={handleChange}
                 />
+                {errors.confirmPassword && (
+                  <div
+                    id="validationServerBrandFeedback"
+                    className="invalid-feedback"
+                  >
+                    {errors.confirmPassword}
+                  </div>
+                )}
               </div>
               <div className="form-check form-group">
                 <input
                   type="checkbox"
-                  className="form-check-input"
+                  className={
+                    errors.acceptedAccess
+                      ? "form-check-input is-invalid"
+                      : "form-check-input"
+                  }
                   id="acceptedAccess"
                   name="acceptedAccess"
-                  onChange={handleCheckboxChange}
+                  checked={acceptedAccess}
+                  onChange={handleChecked}
                 />
                 <label className="form-check-label" htmlFor="acceptedAccess">
                   I understand the policy and acknowledge the violation
                 </label>
+                {errors.acceptedAccess && (
+                  <div
+                    id="validationServerBrandFeedback"
+                    className="invalid-feedback"
+                  >
+                    {errors.acceptedAccess}
+                  </div>
+                )}
               </div>
               <button onClick={handleSubmit} className="btn btn-primary">
                 Submit

@@ -39,8 +39,8 @@ const Products = () => {
   const fetchProducts = async () => {
     try {
       const res = await axios.get(`http://localhost:8080/products`);
-      console.log(res);
-      setProducts(res.data);
+      // console.log(res);
+      setProducts(res.data.results);
       setIsLoading(false);
     } catch (err) {
       console.error(err);
@@ -103,16 +103,13 @@ const Products = () => {
                       products.map((products) => {
                         return (
                           <TableRow key={products.id}>
-                            <TableCell>{products.productName}</TableCell>
-                            <TableCell>
-                              <img
-                                className="productImg"
-                                src={products.image}
-                                alt={products.productName}
-                              />
-                            </TableCell>
+                            <TableCell>{products.id}</TableCell>
+                            <TableCell>{products.product_name}</TableCell>
                             <TableCell>{products.stock}</TableCell>
-                            <TableCell>{products.price}</TableCell>
+                            <TableCell>{products.selling_price}</TableCell>
+                            <TableCell>{products.imported_price}</TableCell>
+                            <TableCell>{products.status}</TableCell>
+                            <TableCell>{products.created_at}</TableCell>
                             <TableCell>
                               <div className="handleButtonAction">
                                 <button
@@ -121,6 +118,11 @@ const Products = () => {
                                 >
                                   Delete
                                 </button>
+                                &nbsp;
+                                <button className="btn btn-success">
+                                  View
+                                </button>
+                                &nbsp;
                                 <button
                                   className="btn btn-primary"
                                   onClick={() => handleEdit(products)}

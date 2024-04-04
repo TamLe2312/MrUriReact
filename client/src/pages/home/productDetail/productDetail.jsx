@@ -1,19 +1,72 @@
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import "./productDetail.css";
 import imgFetures from "../../../../public/images/featur-1.jpg";
 import RemoveIcon from "@mui/icons-material/Remove";
 import AddIcon from "@mui/icons-material/Add";
-import { useEffect, useState } from "react";
-import axios from "axios";
+import { useContext, useEffect, useState } from "react";
+import * as request from "../../../utilities/request";
+import { APP_URL } from "../../../config/env";
+import { toast } from "sonner";
+import { CartContext } from "../../../context/cartProvider";
+import { UserContext } from "../../../context/userProvider";
 
 const ProductDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [product, setProduct] = useState();
+  const [images, setImages] = useState([]);
+  const [viewImg, setViewImg] = useState(0);
+  const [quantity, setQuantity] = useState(1);
+  const { user } = useContext(UserContext);
+  const { carts, dispatch } = useContext(CartContext);
+  const handleView = (index) => {
+    setViewImg(index);
+  };
+
+  const handleQuantity = (e) => {
+    const newValue = parseInt(e.target.value, 10);
+    if (!isNaN(newValue)) {
+      setQuantity(newValue);
+    }
+  };
+  const handleAddCart = () => {
+    if (user) {
+      const img = images[0].image_name;
+      dispatch({
+        type: "ADD_CART",
+        payload: {
+          user_id: user.id,
+          product_id: product.id,
+          quantity: quantity,
+          image: img,
+        },
+      });
+    } else {
+      toast.error("You need to sign in first");
+      navigate("/sign-in");
+    }
+  };
+  const handleInteract = (number) => {
+    setQuantity((prevQuantity) => {
+      if (prevQuantity <= 1 && number === -1) {
+        return prevQuantity;
+      }
+      if (prevQuantity >= 100 && number === 1) {
+        return prevQuantity;
+      }
+      return prevQuantity + number;
+    });
+  };
+
   const fetchProduct = async (id) => {
     try {
-      const res = await axios.get(`http://localhost:3001/products/${id}`);
-      //   console.log(res);
-      setProduct(res.data);
+      const productDetail = await request.getRequest(
+        `products/viewDetail/${id}`
+      );
+      setProduct(productDetail.data.results[0]);
+      const imgs = await request.getRequest(`products/viewDetailImgs/${id}`);
+      // console.log(imgs.data.results);
+      setImages(imgs.data.results);
     } catch (err) {
       console.error(err);
     }
@@ -36,61 +89,97 @@ const ProductDetail = () => {
       {/* <!-- Single Page Header End --> */}
 
       {/* <!-- Single Product Start --> */}
-      <div className="container-fluid py-5 mt-5">
+      <div className="container-fluid py-5 mt-5 productDetailContainer">
         <div className="container py-5">
           <div className="row g-4 mb-5">
-            <div className="col-lg-8 col-xl-9">
+            <div className="col-lg-8 col-xl-9 productDetailLeft">
               <div className="row g-4">
                 <div className="col-lg-6">
-                  <div className="border rounded">
-                    {product && product.image && (
-                      <img
-                        src={product.image}
-                        className="img-fluid rounded"
-                        alt={product.productName}
-                      />
-                    )}
-                  </div>
+                  {images.length > 0 && (
+                    <div className="row">
+                      <div className="product_image_list col-md-2">
+                        {images.map((img, index) => {
+                          return (
+                            <img
+                              key={index}
+                              src={
+                                APP_URL + "/public/uploads/" + img.image_name
+                              }
+                              alt=""
+                              draggable={false}
+                              className={
+                                index === viewImg
+                                  ? "product_image_list_selected"
+                                  : null
+                              }
+                              onClick={() => handleView(index)}
+                            />
+                          );
+                        })}
+                      </div>
+                      <div className="col-md-10 product_image_main">
+                        <img
+                          src={
+                            APP_URL +
+                            "/public/uploads/" +
+                            images[viewImg].image_name
+                          }
+                          alt=""
+                          draggable={false}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="col-lg-6">
                   <h4 className="fw-bold mb-3">
-                    {product && product.productName
-                      ? product.productName
+                    {product && product.product_name
+                      ? product.product_name
                       : "Không có"}
                   </h4>
                   {/* <p className="mb-3">Category: Vegetables</p> */}
                   <h5 className="fw-bold mb-3">
-                    {product && product.price ? product.price : "Không có"} đ
+                    {product && product.selling_price
+                      ? product.selling_price
+                      : "Không có"}
+                    đ
                   </h5>
                   <p className="mb-4">
-                    The generated Lorem Ipsum is therefore always free from
-                    repetition injected humour, or non-characteristic words etc.
-                  </p>
-                  <p className="mb-4">
-                    Susp endisse ultricies nisi vel quam suscipit. Sabertooth
-                    peacock flounder; chain pickerel hatchetfish, pencilfish
-                    snailfish
+                    {product && product.product_description
+                      ? product.product_description
+                      : "Không có"}
                   </p>
                   <div className="input-quantity-container">
                     <div className="input-group-btn">
-                      <button className="btn btn-sm btn-minus rounded-circle bg-light border">
+                      <button
+                        className="btn btn-sm btn-minus rounded-circle bg-light border"
+                        onClick={() => handleInteract(-1)}
+                      >
                         <RemoveIcon />
                       </button>
                     </div>
-                    <input type="text" defaultValue="1" name="quantity" />
+                    <input
+                      type="text"
+                      name="quantity"
+                      value={quantity}
+                      onChange={handleQuantity}
+                    />
                     <div className="input-group-btn">
-                      <button className="btn btn-sm btn-plus rounded-circle bg-light border">
+                      <button
+                        className="btn btn-sm btn-plus rounded-circle bg-light border"
+                        onClick={() => handleInteract(1)}
+                      >
                         <AddIcon />
                       </button>
                     </div>
                   </div>
-                  <a
-                    href="#"
+                  <button
                     className="btn border border-secondary rounded-pill px-4 py-2 mb-4 text-primary"
+                    onClick={handleAddCart}
                   >
-                    <i className="fa fa-shopping-bag me-2 text-primary"></i> Add
-                    to cart
-                  </a>
+                    <i className="fa fa-shopping-bag me-2 text-primary"></i>
+                    Add to cart
+                  </button>
                 </div>
                 <div className="col-lg-12">
                   <nav>
@@ -117,68 +206,16 @@ const ProductDetail = () => {
                       aria-labelledby="nav-about-tab"
                     >
                       <p>
-                        The generated Lorem Ipsum is therefore always free from
-                        repetition injected humour, or non-characteristic words
-                        etc. Susp endisse ultricies nisi vel quam suscipit{" "}
+                        {product && product.product_description
+                          ? product.product_description
+                          : "Không có"}
                       </p>
-                      <p>
-                        Sabertooth peacock flounder; chain pickerel hatchetfish,
-                        pencilfish snailfish filefish Antarctic icefish goldeye
-                        aholehole trumpetfish pilot fish airbreathing catfish,
-                        electric ray sweeper.
-                      </p>
-                      <div className="px-2">
-                        <div className="row g-4">
-                          <div className="col-6">
-                            <div className="row bg-light align-items-center text-center justify-content-center py-2">
-                              <div className="col-6">
-                                <p className="mb-0">Weight</p>
-                              </div>
-                              <div className="col-6">
-                                <p className="mb-0">1 kg</p>
-                              </div>
-                            </div>
-                            <div className="row text-center align-items-center justify-content-center py-2">
-                              <div className="col-6">
-                                <p className="mb-0">Country of Origin</p>
-                              </div>
-                              <div className="col-6">
-                                <p className="mb-0">Agro Farm</p>
-                              </div>
-                            </div>
-                            <div className="row bg-light text-center align-items-center justify-content-center py-2">
-                              <div className="col-6">
-                                <p className="mb-0">Quality</p>
-                              </div>
-                              <div className="col-6">
-                                <p className="mb-0">Organic</p>
-                              </div>
-                            </div>
-                            <div className="row text-center align-items-center justify-content-center py-2">
-                              <div className="col-6">
-                                <p className="mb-0">Сheck</p>
-                              </div>
-                              <div className="col-6">
-                                <p className="mb-0">Healthy</p>
-                              </div>
-                            </div>
-                            <div className="row bg-light text-center align-items-center justify-content-center py-2">
-                              <div className="col-6">
-                                <p className="mb-0">Min Weight</p>
-                              </div>
-                              <div className="col-6">
-                                <p className="mb-0">250 Kg</p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-            <div className="col-lg-4 col-xl-3">
+            <div className="col-lg-4 col-xl-3 productDetailRight">
               <div className="row g-4 fruite">
                 <div className="col-lg-12">
                   <div className="mb-4">
@@ -286,7 +323,7 @@ const ProductDetail = () => {
                       href="#"
                       className="btn border border-secondary rounded-pill px-3 py-1 mb-4 text-primary"
                     >
-                      <i className="fa fa-shopping-bag me-2 text-primary"></i>{" "}
+                      <i className="fa fa-shopping-bag me-2 text-primary"></i>
                       Add to cart
                     </a>
                   </div>
@@ -318,7 +355,7 @@ const ProductDetail = () => {
                       href="#"
                       className="btn border border-secondary rounded-pill px-3 py-1 mb-4 text-primary"
                     >
-                      <i className="fa fa-shopping-bag me-2 text-primary"></i>{" "}
+                      <i className="fa fa-shopping-bag me-2 text-primary"></i>
                       Add to cart
                     </a>
                   </div>
@@ -350,7 +387,7 @@ const ProductDetail = () => {
                       href="#"
                       className="btn border border-secondary rounded-pill px-3 py-1 mb-4 text-primary"
                     >
-                      <i className="fa fa-shopping-bag me-2 text-primary"></i>{" "}
+                      <i className="fa fa-shopping-bag me-2 text-primary"></i>
                       Add to cart
                     </a>
                   </div>
@@ -382,7 +419,7 @@ const ProductDetail = () => {
                       href="#"
                       className="btn border border-secondary rounded-pill px-3 py-1 mb-4 text-primary"
                     >
-                      <i className="fa fa-shopping-bag me-2 text-primary"></i>{" "}
+                      <i className="fa fa-shopping-bag me-2 text-primary"></i>
                       Add to cart
                     </a>
                   </div>
@@ -414,7 +451,7 @@ const ProductDetail = () => {
                       href="#"
                       className="btn border border-secondary rounded-pill px-3 py-1 mb-4 text-primary"
                     >
-                      <i className="fa fa-shopping-bag me-2 text-primary"></i>{" "}
+                      <i className="fa fa-shopping-bag me-2 text-primary"></i>
                       Add to cart
                     </a>
                   </div>
@@ -446,7 +483,7 @@ const ProductDetail = () => {
                       href="#"
                       className="btn border border-secondary rounded-pill px-3 py-1 mb-4 text-primary"
                     >
-                      <i className="fa fa-shopping-bag me-2 text-primary"></i>{" "}
+                      <i className="fa fa-shopping-bag me-2 text-primary"></i>
                       Add to cart
                     </a>
                   </div>
@@ -478,7 +515,7 @@ const ProductDetail = () => {
                       href="#"
                       className="btn border border-secondary rounded-pill px-3 py-1 mb-4 text-primary"
                     >
-                      <i className="fa fa-shopping-bag me-2 text-primary"></i>{" "}
+                      <i className="fa fa-shopping-bag me-2 text-primary"></i>
                       Add to cart
                     </a>
                   </div>
@@ -510,7 +547,7 @@ const ProductDetail = () => {
                       href="#"
                       className="btn border border-secondary rounded-pill px-3 py-1 mb-4 text-primary"
                     >
-                      <i className="fa fa-shopping-bag me-2 text-primary"></i>{" "}
+                      <i className="fa fa-shopping-bag me-2 text-primary"></i>
                       Add to cart
                     </a>
                   </div>

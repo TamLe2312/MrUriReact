@@ -2,6 +2,10 @@ const express = require("express");
 const {
   getProducts,
   addProducts,
+  viewProducts,
+  viewDetail,
+  viewDetailImgs,
+  getProductById,
 } = require("../../controller/products/products");
 
 const Router = express.Router();
@@ -21,6 +25,10 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 Router.get("/", getProducts);
+Router.get("/:id", getProductById);
+Router.get("/view", viewProducts);
+Router.get("/viewDetail/:id", viewDetail);
+Router.get("/viewDetailImgs/:id", viewDetailImgs);
 Router.post("/add", upload.array("images"), addProducts);
 
 module.exports = Router;

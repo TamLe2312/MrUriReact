@@ -79,11 +79,14 @@ const AdminHome = () => {
     try {
       const res = await request.postRequest("users/verifyToken", { token });
       if (res.status === 200) {
-        if (res.data.results === "user") {
+        if (res.data.results.role === "user") {
           navigate("/");
         }
       }
     } catch (err) {
+      if (err.response.status === 500) {
+        localStorage.removeItem("token");
+      }
       console.error(err);
     }
   };

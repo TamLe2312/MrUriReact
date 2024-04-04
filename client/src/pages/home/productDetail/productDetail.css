@@ -57,3 +57,27 @@
 .productCategories li a {
   text-decoration: none;
 }
+.productDetailContainer .productDetailLeft .row .product_image_list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0;
+}
+.productDetailContainer
+  .productDetailLeft
+  .row
+  .product_image_list
+  img.product_image_list_selected {
+  border: 3px solid rgb(0, 139, 232);
+}
+.productDetailContainer .productDetailLeft .row .product_image_list img {
+  width: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.productDetailContainer .productDetailLeft .row .product_image_main img {
+  width: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+}

@@ -13,7 +13,7 @@ const verifyToken = (req, res) => {
         return res.status(500).json({ message: "Invalid token" });
       }
       connection.query(
-        "SELECT * FROM users WHERE id = ?",
+        "SELECT id,role FROM users WHERE id = ?",
         [decoded.userId],
         async function (err, results, fields) {
           if (err) {
@@ -22,7 +22,7 @@ const verifyToken = (req, res) => {
           if (results.length > 0) {
             return res
               .status(200)
-              .json({ mesage: "Success", results: results[0].role });
+              .json({ mesage: "Success", results: results[0] });
           }
         }
       );

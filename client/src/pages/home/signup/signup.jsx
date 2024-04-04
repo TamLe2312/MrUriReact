@@ -36,7 +36,7 @@ const SignUp = () => {
   };
 
   const validate = () => {
-    const errors = Validation(formData, "users");
+    const errors = Validation(formData, "usersRegister");
     let isValid = true;
 
     if (!acceptedAccess) {

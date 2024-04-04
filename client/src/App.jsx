@@ -2,7 +2,6 @@ import { Suspense, lazy } from "react";
 import "./App.css";
 import { Routes, Route } from "react-router-dom";
 import { Toaster } from "sonner";
-import { EditedProductProvider } from "./context";
 
 const LazyHome = lazy(() => import("./pages/index"));
 const LazyHomepage = lazy(() => import("./pages/home/homepage"));
@@ -16,13 +15,14 @@ const LazyDashboard = lazy(() => import("./pages/admin/dashboard/dashboard"));
 const LazyUsers = lazy(() => import("./pages/admin/users/users"));
 const LazyAddProduct = lazy(() => import("./pages/admin/products/addProduct"));
 const LazyProducts = lazy(() => import("./pages/admin/products/products"));
-import AddProduct from "./pages/admin/products/addProduct";
+const LazyCarts = lazy(() => import("./pages/home/carts/carts"));
+import AddProduct from "./pages/admin/products/addProduct"; //KHÔNG ĐƯỢC XÓA,XÓA LÀ LỖI (DUNNO WHY SORRY)
 
 import Loading from "./components/loading/Loading";
 
 function App() {
   return (
-    <EditedProductProvider>
+    <>
       <Routes>
         <Route
           path="/"
@@ -45,6 +45,14 @@ function App() {
             element={
               <Suspense fallback={<Loading />}>
                 <LazyProductDetail />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/carts"
+            element={
+              <Suspense fallback={<Loading />}>
+                <LazyCarts />
               </Suspense>
             }
           />
@@ -103,7 +111,7 @@ function App() {
         </Route>
       </Routes>
       <Toaster position="top-right" expand={false} richColors />
-    </EditedProductProvider>
+    </>
   );
 }
 

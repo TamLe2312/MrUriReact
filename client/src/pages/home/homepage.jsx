@@ -5,7 +5,7 @@ import { MdOutlineSecurity } from "react-icons/md";
 import { FaExchangeAlt, FaPhoneAlt } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
-import axios from "axios";
+import * as request from "../../utilities/request";
 import { useEffect, useState } from "react";
 import ProductSkeleton from "../../components/skeleton/productSkeleton/productSkeleton";
 
@@ -14,9 +14,13 @@ const Homepage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const fetchProducts = async () => {
     try {
-      const res = await axios.get(`http://localhost:3001/products`);
-      // console.log(res);
-      setProducts(res.data);
+      const res = await request.getRequest("products/view");
+      const productsArray = res.data.results.map((product) => ({
+        ...product,
+        images: product.images.split(","),
+      }));
+      // console.log(productsArray);
+      setProducts(productsArray);
       setIsLoading(false);
     } catch (err) {
       console.error(err);
@@ -262,9 +266,9 @@ const Homepage = () => {
                                 >
                                   <div className="product-img">
                                     <img
-                                      src={product.image}
+                                      src={`../../../public/uploads/${product.images[0]}`}
                                       className="img-fluid rounded-top"
-                                      alt={product.productName}
+                                      alt={product.product_name}
                                     />
                                   </div>
                                 </a>
@@ -282,16 +286,11 @@ const Homepage = () => {
                                       color: "#000",
                                     }}
                                   >
-                                    <h5>{product.productName}</h5>
+                                    <h5>{product.product_name}</h5>
                                   </Link>
-                                  <p>
-                                    Lorem ipsum dolor sit amet consectetur
-                                    adipisicing elit sed do eiusmod tempor
-                                    incididunt
-                                  </p>
                                   <div className="d-flex flex-column gap-2">
                                     <p className="text-dark fs-5 fw-bold mb-0">
-                                      {product.price} đ
+                                      {product.selling_price} đ
                                     </p>
                                     <a
                                       href="#"

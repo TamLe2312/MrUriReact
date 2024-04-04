@@ -1,10 +1,10 @@
 import { Container, Grid, Paper } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
-import { useEditedProduct } from "../../../context";
+import { EditProductContext } from "../../../context/editProductProvider";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import FileUploadIcon from "@mui/icons-material/FileUpload";
 import "./products.css";
@@ -13,7 +13,7 @@ import * as request from "../../../utilities/request";
 
 const AddProduct = () => {
   const { editedProduct, isEdit, setEditedProduct, setIsEdit } =
-    useEditedProduct();
+    useContext(EditProductContext);
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({

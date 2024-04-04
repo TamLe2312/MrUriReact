@@ -123,7 +123,7 @@ const getProducts = (req, res) => {
         .status(200)
         .json({ message: "Thành công", results: transformedData });
     } else {
-      return res.status(400).json({ message: "Sản phẩm không tồn tại" });
+      return res.status(200).json({ message: "Sản phẩm không tồn tại" });
     }
   });
 };
@@ -172,18 +172,24 @@ const getProductById = (req, res) => {
 };
 
 const addProducts = (req, res) => {
-  const { formDatas } = req.body;
+  const {
+    productName,
+    productDescription,
+    importedPrice,
+    sellingPrice,
+    status,
+    stock,
+  } = req.body;
   const files = req.files;
-  if (formDatas && files) {
-    const {
-      productName,
-      productDescription,
-      stock,
-      sellingPrice,
-      importedPrice,
-      status,
-    } = JSON.parse(formDatas);
-
+  if (
+    productName &&
+    productDescription &&
+    importedPrice &&
+    sellingPrice &&
+    status &&
+    stock &&
+    files
+  ) {
     const productNameValid = productName.toLowerCase().replace(/\s+/g, "_");
     const stockValid = parseInt(stock);
     const sellingPriceValid = parseFloat(sellingPrice);

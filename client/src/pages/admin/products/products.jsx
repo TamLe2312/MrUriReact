@@ -11,20 +11,21 @@ import {
   TableRow,
 } from "@mui/material";
 import "./products.css";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
-import { useEditedProduct } from "../../../context";
 import ProductAdminSkeleton from "../../../components/skeleton/productAdminSkeleton/productAdminSkeleton";
+import { EditProductContext } from "../../../context/editProductProvider";
+import * as request from "../../../utilities/request";
 
 const Products = () => {
   const [products, setProducts] = useState();
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const navigate = useNavigate();
-  const { setEditedProduct, setIsEdit } = useEditedProduct();
+  const { setEditedProduct, setIsEdit } = useContext(EditProductContext);
   const [isLoading, setIsLoading] = useState(true);
 
   const handleChangePage = (event, newPage) => {
@@ -38,12 +39,13 @@ const Products = () => {
 
   const fetchProducts = async () => {
     try {
-      const res = await axios.get(`http://localhost:8080/products`);
-      // console.log(res);
-      setProducts(res.data.results);
-      setIsLoading(false);
+      const res = await request.getRequest(`products`);
+      if (res.data.results.length > 0) {
+        setProducts(res.data.results);
+        setIsLoading(false);
+      }
     } catch (err) {
-      console.error(err);
+      // console.error(err);
     }
   };
 

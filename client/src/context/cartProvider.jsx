@@ -26,10 +26,9 @@ function CartProvider({ children }) {
   const deleteCart = async (cart) => {
     try {
       const res = await request.deleteRequest(`carts/delete/${cart.cart.id}`);
-      if (res.data.results.length > 0) {
-        toast.success(res.data.message);
-        return res.data.results;
-      }
+      console.log(res);
+      toast.success(res.data.message);
+      return res.data.results;
     } catch (err) {
       console.error(err);
     }

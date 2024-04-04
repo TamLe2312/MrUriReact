@@ -159,12 +159,10 @@ const deleteCart = (req, res) => {
                 product_name: productName,
               };
             });
-            return res
-              .status(200)
-              .json({
-                message: "Delete Cart Success",
-                results: transformedData,
-              });
+            return res.status(200).json({
+              message: "Delete Cart Success",
+              results: transformedData,
+            });
           });
         });
       }
@@ -173,33 +171,38 @@ const deleteCart = (req, res) => {
 };
 
 const changeQuantity = (req, res) => {
-  const { user_id, carts } = req.body;
-  if (user_id && carts) {
-    carts.forEach((cart, index) => {
-      const sql = `SELECT * FROM carts WHERE product_id = ? AND user_id = ?`;
-      connection.query(sql, [cart.product_id, user_id], (err, data) => {
+  const { user_id, cart } = req.body;
+  if (user_id && cart) {
+    connection.query(
+      `UPDATE carts SET quantity = (?) WHERE id = (?)`,
+      [cart.quantity, cart.id],
+      (err, data) => {
         if (err) {
           console.error(err);
           return res.status(500).json({ message: "Lỗi máy chủ" });
         }
-        if (data.length > 0) {
-          const updateSql = `UPDATE carts SET quantity = ? WHERE product_id = ? AND user_id = ?`;
-          connection.query(
-            updateSql,
-            [parseInt(carts[index].quantity), carts[index].product_id, user_id],
-            (err, data) => {
-              if (err) {
-                console.error(err);
-                return res.status(500).json({ message: "Lỗi máy chủ" });
-              }
-              return res.status(200).json({
-                message: "Success",
-              });
-            }
-          );
-        }
-      });
-    });
+        const getSql = `SELECT products.product_name,products.selling_price,carts.quantity,carts.image,carts.id,carts.product_id FROM carts INNER JOIN products on products.id = carts.product_id `;
+        connection.query(getSql, (err, data) => {
+          if (err) {
+            console.error(err);
+            return res.status(500).json({ message: "Lỗi máy chủ" });
+          }
+          const transformedData = data.map((item) => {
+            const productName = item.product_name
+              .replace(/_/g, " ")
+              .replace(/\b\w/g, (c) => c.toUpperCase());
+            return {
+              ...item,
+              product_name: productName,
+            };
+          });
+          return res.status(200).json({
+            message: "Success",
+            results: transformedData,
+          });
+        });
+      }
+    );
   }
 };
 

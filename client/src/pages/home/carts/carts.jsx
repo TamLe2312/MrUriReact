@@ -1,7 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
 import "./carts.css";
-import RemoveIcon from "@mui/icons-material/Remove";
-import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { toast } from "sonner";
 import { useContext, useEffect, useState } from "react";
@@ -35,25 +33,25 @@ const Carts = () => {
     if (e.target.value <= 0) {
       e.target.value = 1;
     }
-
-    const product = await request.getRequest(`products/${cart.product_id}`);
-    // console.log(product);
-    if (product.data.results.stock < e.target.value) {
+    const product = await request.getRequest(
+      `products/product/${cart.product_id}`
+    );
+    if (parseInt(e.target.value) > parseInt(product.data.results.stock)) {
       e.target.value = product.data.results.stock;
     }
     cartItems.forEach((element, index) => {
       if (element.id === cart.id) {
         cartItems[index].quantity = e.target.value;
-        changeCart();
+        changeCart(element);
       }
     });
   };
 
-  const changeCart = async () => {
+  const changeCart = async (cart) => {
     try {
       const res = await request.postRequest(`carts/changeQuantity`, {
         user_id: user.id,
-        carts: cartItems,
+        cart: cart,
       });
       // console.log(res);
       if (res.data.message && res.status === 200) {
@@ -80,7 +78,7 @@ const Carts = () => {
     if (carts) {
       if (user) {
         fetchCarts(user);
-      } /*  else {
+      } /* else {
         toast.error("You must be sign-in first");
         navigate("/sign-in");
       } */

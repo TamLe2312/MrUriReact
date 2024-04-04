@@ -111,8 +111,12 @@ const AddProduct = () => {
       if (Object.keys(errors).length === 0) {
         try {
           const formDatas = new FormData();
-          formDatas.append("formDatas", formData);
-
+          formDatas.append("productName", formData.productName);
+          formDatas.append("importedPrice", formData.importedPrice);
+          formDatas.append("productDescription", formData.productDescription);
+          formDatas.append("sellingPrice", formData.sellingPrice);
+          formDatas.append("status", formData.status);
+          formDatas.append("stock", formData.stock);
           images.forEach((image) => {
             formDatas.append("images", image.image);
           });

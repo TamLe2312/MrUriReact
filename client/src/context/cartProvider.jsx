@@ -26,9 +26,21 @@ function CartProvider({ children }) {
   const deleteCart = async (cart) => {
     try {
       const res = await request.deleteRequest(`carts/delete/${cart.cart.id}`);
-      console.log(res);
+      // console.log(res);
       toast.success(res.data.message);
       return res.data.results;
+    } catch (err) {
+      console.error(err);
+    }
+  };
+  const clearCart = async (user) => {
+    try {
+      const res = await request.deleteRequest(`carts/clear/${user.user_id}`);
+      if (res.status === 200) {
+        // console.log(res);
+        toast.success(res.data.message);
+      }
+      return [];
     } catch (err) {
       console.error(err);
     }
@@ -54,6 +66,13 @@ function CartProvider({ children }) {
       }
       case "DELETE_CART": {
         const newCarts = deleteCart(action.payload);
+        return {
+          ...state,
+          carts: newCarts,
+        };
+      }
+      case "CLEAR_CART": {
+        const newCarts = clearCart(action.payload);
         return {
           ...state,
           carts: newCarts,

@@ -74,8 +74,7 @@ const SignIn = () => {
           navigate("/");
         }
       } catch (err) {
-        // toast.error(err.response.data.message);
-        console.error(err);
+        toast.error(err.response.data.message);
       }
     } else {
       console.log(errors);

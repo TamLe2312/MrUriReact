@@ -10,6 +10,7 @@ import FileUploadIcon from "@mui/icons-material/FileUpload";
 import "./products.css";
 import Validation from "../../../components/validation/validation";
 import * as request from "../../../utilities/request";
+import Select from "react-select";
 
 const AddProduct = () => {
   const { editedProduct, isEdit, setEditedProduct, setIsEdit } =
@@ -23,9 +24,12 @@ const AddProduct = () => {
     importedPrice: "",
     sellingPrice: "",
     status: "stock",
+    selectedCategories: [],
   });
   const [images, setImages] = useState([]);
   const [errors, setErrors] = useState({});
+  const [options, setOptions] = useState([]);
+
   useEffect(() => {
     if (editedProduct && isEdit) {
       setFormData({
@@ -40,6 +44,13 @@ const AddProduct = () => {
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleChangeCategories = (selectedCategory) => {
+    setFormData((prevData) => ({
+      ...prevData,
+      selectedCategories: selectedCategory,
+    }));
   };
   const handleImages = (e) => {
     const files = e.target.files;
@@ -73,7 +84,6 @@ const AddProduct = () => {
 
   const handleDeleteImg = (img) => {
     // console.log(img);
-
     const updatedImages = images.filter((image) => image.id !== img.id);
     setImages(updatedImages);
   };
@@ -83,6 +93,26 @@ const AddProduct = () => {
     setEditedProduct();
     navigate("/dashboard/products");
   };
+
+  const validate = () => {
+    const errors = Validation(formData, "products");
+    let isValid = true;
+    setErrors(errors);
+
+    setErrors((prevErrors) => ({
+      ...prevErrors,
+      images: "Images cannot be empty",
+    }));
+    if (
+      Object.keys(errors).length !== 0 ||
+      !Object.values(formData).every((value) => value !== "")
+    ) {
+      isValid = false;
+    }
+
+    return isValid;
+  };
+
   const handleAdd = async () => {
     setErrors({});
     if (editedProduct) {
@@ -100,15 +130,9 @@ const AddProduct = () => {
         console.error(err);
       }
     } else {
-      setErrors(Validation(formData));
-      if (images.length < 1) {
-        setErrors((prevErrors) => ({
-          ...prevErrors,
-          images: "Images cannot be empty",
-        }));
-      }
-
-      if (Object.keys(errors).length === 0) {
+      const isValid = validate();
+      // console.log(options);
+      if (isValid) {
         try {
           const formDatas = new FormData();
           formDatas.append("productName", formData.productName);
@@ -117,6 +141,9 @@ const AddProduct = () => {
           formDatas.append("sellingPrice", formData.sellingPrice);
           formDatas.append("status", formData.status);
           formDatas.append("stock", formData.stock);
+          formData.selectedCategories.forEach((category) => {
+            formDatas.append("productCategories", category.value);
+          });
           images.forEach((image) => {
             formDatas.append("images", image.image);
           });
@@ -133,6 +160,27 @@ const AddProduct = () => {
       }
     }
   };
+
+  const fetchCategories = async () => {
+    try {
+      const res = await request.getRequest("categories");
+      if (res.data.results.length > 0) {
+        const newOptions = res.data.results
+          .filter((category) => category.status === 1)
+          .map((category) => ({
+            value: category.id,
+            label: category.category_name,
+          }));
+        setOptions((prevOptions) => prevOptions.concat(newOptions));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
 
   return (
     <>
@@ -278,6 +326,27 @@ const AddProduct = () => {
                     className="invalid-feedback"
                   >
                     {errors.status}
+                  </div>
+                )}
+              </div>
+              <div className="form-group">
+                <label>Categories</label>
+                <Select
+                  isMulti
+                  name="categories"
+                  options={options}
+                  value={formData.selectedCategories}
+                  className="basic-multi-select"
+                  classNamePrefix="select"
+                  onChange={handleChangeCategories}
+                />
+
+                {errors.categories && (
+                  <div
+                    id="validationServerBrandFeedback"
+                    className="invalid-feedback"
+                  >
+                    {errors.categories}
                   </div>
                 )}
               </div>

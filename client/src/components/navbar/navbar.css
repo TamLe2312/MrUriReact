@@ -142,9 +142,15 @@
 .navbarContainer .navbarTop a {
   text-decoration: none;
 }
-/* .navbarContainer .navbarTop {
-  background-color: #81c408 !important;
-} */
+.navbarContainer .navbarTop .userInform button {
+  background-color: transparent;
+  color: #fff;
+  border: none;
+}
+.navbarContainer .navbarTop .userInform a {
+  color: #fff;
+  text-decoration: underline;
+}
 .navbarContainer .navbarBottom nav a > h1 {
   font-size: 2.5rem;
 

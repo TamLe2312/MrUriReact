@@ -1,0 +1,47 @@
+.page-header {
+  background-color: #0d6efd;
+  margin-top: 152px !important;
+}
+.page-header ol li > a {
+  color: #fff;
+}
+
+.paymentMethodContainer {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.paymentMethodContainer .paymentMethodItem label {
+  margin-left: 8px;
+}
+.checkoutSuccess {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+.checkoutSuccess .successIcon {
+  width: 100px;
+  height: 100px;
+  color: #7cea70;
+  border: 3px solid #7cea70;
+  border-radius: 50%;
+  margin-bottom: 20px;
+}
+.checkoutSuccess .handleRedirect {
+  margin: 20px;
+}
+.checkoutSuccess .handleRedirect a {
+  text-decoration: none;
+  margin: 0 20px;
+  background-color: #0d6efd;
+  color: #fff;
+  padding: 12px;
+  border-radius: 8px;
+  transition: all 0.5s ease;
+}
+.checkoutSuccess .handleRedirect a:hover {
+  border: 2px solid #0d6efd;
+  background-color: transparent;
+  color: #0d6efd;
+}

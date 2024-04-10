@@ -5,7 +5,50 @@ import { MdOutlineMailOutline } from "react-icons/md";
 import { FaSearch, FaUser } from "react-icons/fa";
 import { FiShoppingCart } from "react-icons/fi";
 import { Link } from "react-router-dom";
+import { useContext, useEffect, useState } from "react";
+import { UserContext } from "../../context/userProvider";
+import * as request from "../../utilities/request";
 const Navbar = () => {
+  const { user, handleSet } = useContext(UserContext);
+  const [currentUser, setCurrentUser] = useState({});
+  const [categories, setCategories] = useState();
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    handleSet(null);
+  };
+  const fetchUser = async (userId) => {
+    if (userId) {
+      try {
+        const res = await request.getRequest(`users/user/${userId}`);
+        if (res.status === 200) {
+          setCurrentUser(res.data.results[0]);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+  const fetchCategories = async () => {
+    try {
+      const res = await request.getRequest("categories");
+      if (res.status === 200) {
+        // console.log(res.data);
+        setCategories(res.data.results);
+      } else {
+        setCategories(null);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+  useEffect(() => {
+    if (user !== null) {
+      fetchUser(user.id);
+    } else {
+      setCurrentUser(null);
+    }
+    fetchCategories();
+  }, [user]);
   return (
     <>
       {/* <!-- Navbar start --> */}
@@ -27,15 +70,17 @@ const Navbar = () => {
               </small>
             </div>
             <div className="top-link pe-2">
-              <a href="#" className="text-white">
-                <small className="text-white mx-2">Privacy Policy</small>/
-              </a>
-              <a href="#" className="text-white">
-                <small className="text-white mx-2">Terms of Use</small>/
-              </a>
-              <a href="#" className="text-white">
-                <small className="text-white ms-2">Sales and Refunds</small>
-              </a>
+              {currentUser !== null ? (
+                <small className="text-white userInform">
+                  Hello {currentUser.username},
+                  <button onClick={handleLogout}>Logout</button>
+                </small>
+              ) : (
+                <small className="text-white userInform">
+                  <Link to={"/sign-in"}>Sign-in</Link> or{" "}
+                  <Link to={"/sign-up"}>Sign-up</Link>
+                </small>
+              )}
             </div>
           </div>
         </div>
@@ -57,38 +102,52 @@ const Navbar = () => {
               id="navbarCollapse"
             >
               <div className="navbar-nav mx-auto">
-                <a href="index.html" className="nav-item nav-link active">
-                  Home
-                </a>
-                <a href="shop.html" className="nav-item nav-link">
-                  Shop
-                </a>
-                <a href="shop-detail.html" className="nav-item nav-link">
-                  Shop Detail
-                </a>
-                <div className="nav-item dropdown">
-                  <a href="#" className="nav-link ">
-                    Pages &nbsp;
-                    <IoIosArrowDown />
-                  </a>
-                  <div className="dropdown-menu m-0 bg-secondary rounded-0">
-                    <a href="cart.html" className="dropdown-item">
-                      Cart
-                    </a>
-                    <a href="chackout.html" className="dropdown-item">
-                      Chackout
-                    </a>
-                    <a href="testimonial.html" className="dropdown-item">
-                      Testimonial
-                    </a>
-                    <a href="404.html" className="dropdown-item">
-                      404 Page
-                    </a>
-                  </div>
-                </div>
-                <a href="contact.html" className="nav-item nav-link">
-                  Contact
-                </a>
+                {categories && categories.length > 0 ? (
+                  categories.map((category) => {
+                    const childCategories = categories.filter(
+                      (childCategory) =>
+                        category.id === childCategory.parent_category
+                    );
+                    return (
+                      category.parent_category === 0 &&
+                      category.status === 1 &&
+                      (childCategories && childCategories.length > 0 ? (
+                        <div className="nav-item dropdown" key={category.id}>
+                          <Link
+                            to={`categories/${category.category_slug}`}
+                            className="nav-link "
+                          >
+                            {category.category_name} &nbsp;
+                            <IoIosArrowDown />
+                          </Link>
+                          <div className="dropdown-menu m-0 bg-secondary rounded-0">
+                            {childCategories.map((childCategory) => {
+                              return (
+                                <Link
+                                  to={`categories/${childCategory.category_slug}`}
+                                  className="dropdown-item"
+                                  key={childCategory.id}
+                                >
+                                  {childCategory.category_name}
+                                </Link>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ) : (
+                        <Link
+                          className="nav-item nav-link"
+                          to={`categories/${category.category_slug}`}
+                          key={category.id}
+                        >
+                          {category.category_name}
+                        </Link>
+                      ))
+                    );
+                  })
+                ) : (
+                  <a className="nav-item nav-link">Không có danh mục</a>
+                )}
               </div>
               <div className="d-flex m-3 me-0">
                 <button
@@ -98,20 +157,8 @@ const Navbar = () => {
                 >
                   <FaSearch id="navbarHandleIcons" />
                 </button>
-                <a href="#" className="position-relative me-4 my-auto">
+                <a href="/carts" className="position-relative me-4 my-auto">
                   <FiShoppingCart id="navbarHandleIcons" />
-                  <span
-                    className="position-absolute rounded-circle d-flex align-items-center justify-content-center text-dark px-1"
-                    style={{
-                      top: "-5px",
-                      left: "15px",
-                      height: "20px",
-                      minWidth: "20px",
-                      backgroundColor: "#ffb524",
-                    }}
-                  >
-                    3
-                  </span>
                 </a>
                 <a href="#" className="my-auto">
                   <FaUser id="navbarHandleIcons" />

@@ -11,20 +11,26 @@ import { CartContext } from "../../../context/cartProvider";
 
 const Carts = () => {
   const navigate = useNavigate();
-  const { user } = useContext(UserContext);
+  const { user, handleSet } = useContext(UserContext);
   const { carts, dispatch } = useContext(CartContext);
   const [cartItems, setCartItems] = useState([]);
+  const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+
   const fetchCarts = async (user) => {
     if (user) {
+      setIsLoading(true);
       try {
         const res = await request.getRequest(`carts/${user.id}`);
         if (res.status === 200) {
+          // console.log(res);
           setCartItems(res.data.results);
-          setIsLoading(false);
+          // console.log(cartItems);
         }
       } catch (err) {
         console.error(err);
+      } finally {
+        setIsLoading(false);
       }
     }
   };
@@ -62,7 +68,7 @@ const Carts = () => {
     }
   };
 
-  const handleDelete = (cart) => {
+  const handleDelete = async (cart) => {
     if (user) {
       dispatch({
         type: "DELETE_CART",
@@ -74,16 +80,49 @@ const Carts = () => {
     }
   };
 
-  useEffect(() => {
-    if (carts) {
-      if (user) {
-        fetchCarts(user);
-      } /* else {
-        toast.error("You must be sign-in first");
-        navigate("/sign-in");
-      } */
+  const fetchUser = async (token) => {
+    try {
+      const res = await request.postRequest("users/verifyToken", { token });
+      if (res.status === 200) {
+        // console.log(res);
+        handleSet(res.data.results);
+        fetchCarts(res.data.results);
+      }
+    } catch (err) {
+      if (err.response.status === 500) {
+        localStorage.removeItem("token");
+      }
+      console.error(err);
     }
-  }, [carts, user]);
+  };
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      fetchUser(token);
+    } else {
+      handleSet(null);
+      toast.error("You need to sign in first");
+      navigate("/sign-in");
+    }
+  }, []);
+
+  useEffect(() => {
+    if (cartItems.length > 0) {
+      let currentTotal = 0;
+      cartItems.map((item) => {
+        currentTotal += item.selling_price * item.quantity;
+      });
+      setTotal(currentTotal);
+    } else {
+      setTotal(0);
+    }
+  }, [cartItems]);
+  useEffect(() => {
+    if (user) {
+      fetchCarts(user);
+    }
+  }, [user, carts]);
+
   return (
     <>
       {/* Single Page Header start */}
@@ -197,26 +236,19 @@ const Carts = () => {
                   </h1>
                   <div className="d-flex justify-content-between mb-4">
                     <h5 className="mb-0 me-4">Subtotal:</h5>
-                    <p className="mb-0">$96.00</p>
+                    <p className="mb-0">{total} đ</p>
                   </div>
-                  <div className="d-flex justify-content-between">
-                    <h5 className="mb-0 me-4">Shipping</h5>
-                    <div className="">
-                      <p className="mb-0">Flat rate: $3.00</p>
-                    </div>
-                  </div>
-                  <p className="mb-0 text-end">Shipping to Ukraine.</p>
                 </div>
                 <div className="py-4 mb-4 border-top border-bottom d-flex justify-content-between">
                   <h5 className="mb-0 ps-4 me-4">Total</h5>
-                  <p className="mb-0 pe-4">$99.00</p>
+                  <p className="mb-0 pe-4">{total} đ</p>
                 </div>
-                <button
+                <a
                   className="btn border-secondary rounded-pill px-4 py-3 text-primary text-uppercase mb-4 ms-4"
-                  type="button"
+                  href="/check-out"
                 >
                   Proceed Checkout
-                </button>
+                </a>
               </div>
             </div>
           </div>

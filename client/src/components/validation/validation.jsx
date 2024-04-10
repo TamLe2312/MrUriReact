@@ -56,6 +56,56 @@ const Validation = (value, type) => {
     if (!value.password) {
       errors.password = "Password cannot be empty";
     }
+  } else if (type === "categories") {
+    if (!value.categoryName) {
+      errors.categoryName = "Category name cannot be empty";
+    }
+    if (!value.categorySlug) {
+      errors.categorySlug = "Category slug cannot be empty";
+    }
+  } else if (type === "check-out") {
+    if (!value.name) {
+      errors.name = "Name cannot be empty";
+    }
+    if (!value.phoneNumber) {
+      errors.phoneNumber = "Phone number cannot be empty";
+    }
+    if (!value.address) {
+      errors.address = "Address cannot be empty";
+    }
+    if (!value.provinces) {
+      errors.provinces = "Province cannot be empty";
+    }
+    if (!value.districts) {
+      errors.districts = "District cannot be empty";
+    }
+    if (!value.wards) {
+      errors.wards = "Ward cannot be empty";
+    }
+    if (!value.paymentMethod) {
+      errors.paymentMethod = "Payment method cannot be empty";
+    }
+  } else if (type === "forgot-password") {
+    if (!value.email) {
+      errors.email = "Email cannot be empty";
+    }
+    if (value.email) {
+      let regex =
+        /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+      if (!regex.test(value.email)) {
+        errors.email = "Email invalid";
+      }
+    }
+  } else if (type === "verify-token") {
+    if (!value.password) {
+      errors.password = "Password cannot be empty";
+    }
+    if (!value.confirmPassword) {
+      errors.confirmPassword = "Confirm password cannot be empty";
+    }
+    if (value.password !== value.confirmPassword) {
+      errors.confirmPassword = "Password must be the same";
+    }
   }
 
   return errors;

@@ -3,15 +3,43 @@ import Fruites from "../../../public/images/hero-img-1.png";
 import { FaCarSide } from "react-icons/fa6";
 import { MdOutlineSecurity } from "react-icons/md";
 import { FaExchangeAlt, FaPhoneAlt } from "react-icons/fa";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import * as request from "../../utilities/request";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import ProductSkeleton from "../../components/skeleton/productSkeleton/productSkeleton";
+import { UserContext } from "../../context/userProvider";
+import { APP_URL } from "../../config/env";
+import { toast } from "sonner";
+import { CartContext } from "../../context/cartProvider";
 
 const Homepage = () => {
   const [products, setProducts] = useState();
   const [isLoading, setIsLoading] = useState(true);
+  const { handleSet } = useContext(UserContext);
+  const { user } = useContext(UserContext);
+  const navigate = useNavigate();
+  const { carts, dispatch } = useContext(CartContext);
+
+  const handleAddCart = async (product) => {
+    if (user) {
+      // console.log(product);
+      const img = product.images[0];
+      dispatch({
+        type: "ADD_CART",
+        payload: {
+          user_id: user.id,
+          product_id: product.id,
+          quantity: 1,
+          image: img,
+        },
+      });
+    } else {
+      toast.error("You need to sign in first");
+      navigate("/sign-in");
+    }
+  };
+
   const fetchProducts = async () => {
     try {
       const res = await request.getRequest("products/view");
@@ -26,8 +54,29 @@ const Homepage = () => {
       console.error(err);
     }
   };
+  const fetchUser = async (token) => {
+    try {
+      const res = await request.postRequest("users/verifyToken", { token });
+      if (res.status === 200) {
+        // console.log(res);
+        // setUser(res.data.results);
+        handleSet(res.data.results);
+      }
+    } catch (err) {
+      if (err.response.status === 500) {
+        localStorage.removeItem("token");
+      }
+      console.error(err);
+    }
+  };
   useEffect(() => {
     fetchProducts();
+    const token = localStorage.getItem("token");
+    if (token) {
+      fetchUser(token);
+    } else {
+      handleSet(null);
+    }
   }, []);
   return (
     <>
@@ -257,8 +306,8 @@ const Homepage = () => {
                               key={product.id}
                             >
                               <div className="rounded position-relative fruit-item">
-                                <a
-                                  href={`product/${product.id}`}
+                                <Link
+                                  to={`/product/${product.id}`}
                                   style={{
                                     textDecoration: "none",
                                     color: "#000",
@@ -266,21 +315,19 @@ const Homepage = () => {
                                 >
                                   <div className="product-img">
                                     <img
-                                      src={`../../../public/uploads/${product.images[0]}`}
+                                      src={
+                                        APP_URL +
+                                        "/public/uploads/" +
+                                        product.images[0]
+                                      }
                                       className="img-fluid rounded-top"
                                       alt={product.product_name}
                                     />
                                   </div>
-                                </a>
-                                <div
-                                  className="text-white bg-secondary px-3 py-1 rounded position-absolute"
-                                  style={{ top: "10px", left: "10px" }}
-                                >
-                                  Fruits
-                                </div>
+                                </Link>
                                 <div className="p-4 border border-secondary border-top-0 rounded-bottom productInform">
                                   <Link
-                                    to={`product/${product.id}`}
+                                    to={`/product/${product.id}`}
                                     style={{
                                       textDecoration: "none",
                                       color: "#000",
@@ -293,7 +340,7 @@ const Homepage = () => {
                                       {product.selling_price} đ
                                     </p>
                                     <a
-                                      href="#"
+                                      onClick={() => handleAddCart(product)}
                                       className="btn border border-secondary rounded-pill px-3 text-primary"
                                     >
                                       <ShoppingCartIcon />

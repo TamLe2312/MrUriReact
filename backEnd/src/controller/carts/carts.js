@@ -11,7 +11,7 @@ const getCarts = (req, res) => {
       const transformedData = data.map((item) => {
         const productName = item.product_name
           .replace(/_/g, " ")
-          .replace(/\b\w/g, (c) => c.toUpperCase());
+          .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
         return {
           ...item,
           product_name: productName,
@@ -38,7 +38,7 @@ const getCartById = (req, res) => {
         const transformedData = data.map((item) => {
           const productName = item.product_name
             .replace(/_/g, " ")
-            .replace(/\b\w/g, (c) => c.toUpperCase());
+            .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
           return {
             ...item,
             product_name: productName,
@@ -81,7 +81,7 @@ const addCart = (req, res) => {
             const transformedData = data.map((item) => {
               const productName = item.product_name
                 .replace(/_/g, " ")
-                .replace(/\b\w/g, (c) => c.toUpperCase());
+                .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
               return {
                 ...item,
                 product_name: productName,
@@ -112,7 +112,7 @@ const addCart = (req, res) => {
             const transformedData = data.map((item) => {
               const productName = item.product_name
                 .replace(/_/g, " ")
-                .replace(/\b\w/g, (c) => c.toUpperCase());
+                .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
               return {
                 ...item,
                 product_name: productName,
@@ -153,7 +153,7 @@ const deleteCart = (req, res) => {
             const transformedData = data.map((item) => {
               const productName = item.product_name
                 .replace(/_/g, " ")
-                .replace(/\b\w/g, (c) => c.toUpperCase());
+                .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
               return {
                 ...item,
                 product_name: productName,
@@ -190,7 +190,7 @@ const changeQuantity = (req, res) => {
           const transformedData = data.map((item) => {
             const productName = item.product_name
               .replace(/_/g, " ")
-              .replace(/\b\w/g, (c) => c.toUpperCase());
+              .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
             return {
               ...item,
               product_name: productName,
@@ -206,10 +206,97 @@ const changeQuantity = (req, res) => {
   }
 };
 
+const checkOut = (req, res) => {
+  const {
+    name,
+    phoneNumber,
+    address,
+    provinces,
+    districts,
+    wards,
+    products,
+    userId,
+    total,
+    paymentMethod,
+  } = req.body;
+  if (
+    name &&
+    phoneNumber &&
+    address &&
+    provinces &&
+    districts &&
+    wards &&
+    products &&
+    userId &&
+    total &&
+    paymentMethod
+  ) {
+    const fullAddress = `${address},${wards},${districts},${provinces}`;
+    if (paymentMethod === "cash") {
+      connection.query(
+        `INSERT INTO orders (user_id,address,pay,phone_number,total,status) VALUES (?,?,?,?,?,?)`,
+        [userId, fullAddress, paymentMethod, phoneNumber, total, "pending"],
+        (err, results, fields) => {
+          if (err) {
+            console.error(err);
+            return res.status(500).json({ message: "Lỗi máy chủ" });
+          }
+          if (results) {
+            const lastId = results.insertId;
+            let completed = 0;
+            products.forEach((product) => {
+              const parseProduct = JSON.parse(product);
+              connection.query(
+                `INSERT INTO order_details (order_id,product_id,quantity,price,img) VALUES (?,?,?,?,?)`,
+                [
+                  lastId,
+                  parseProduct.product_id,
+                  parseProduct.quantity,
+                  parseProduct.selling_price,
+                  parseProduct.image,
+                ],
+                (err, data) => {
+                  if (err) {
+                    console.error(err);
+                    return res.status(500).json({ message: "Lỗi máy chủ" });
+                  }
+                  completed++;
+                  if (completed === products.length) {
+                    return res
+                      .status(200)
+                      .json({ message: "Check-out success" });
+                  }
+                }
+              );
+            });
+          }
+        }
+      );
+    }
+  }
+};
+
+const clearCart = (req, res) => {
+  const id = req.params.id;
+  if (id) {
+    const sql = "DELETE FROM carts WHERE user_id = (?)";
+    connection.query(sql, [id], (err, results, fields) => {
+      if (err) {
+        return res.status(500).json({ message: "Lỗi máy chủ" });
+      }
+      if (results) {
+        return res.status(200).json({ message: "Thành công" });
+      }
+    });
+  }
+};
+
 module.exports = {
   getCarts,
   getCartById,
   addCart,
   deleteCart,
   changeQuantity,
+  checkOut,
+  clearCart,
 };

@@ -19,7 +19,7 @@ const viewProducts = (req, res) => {
       const transformedData = data.map((item) => {
         const productName = item.product_name
           .replace(/_/g, " ")
-          .replace(/\b\w/g, (c) => c.toUpperCase());
+          .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
 
         return {
           ...item,
@@ -54,7 +54,7 @@ const viewDetail = (req, res) => {
         const transformedData = data.map((item) => {
           const productName = item.product_name
             .replace(/_/g, " ")
-            .replace(/\b\w/g, (c) => c.toUpperCase());
+            .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
 
           return {
             ...item,
@@ -98,10 +98,10 @@ const getProducts = (req, res) => {
       const transformedData = data.map((item) => {
         const productName = item.product_name
           .replace(/_/g, " ")
-          .replace(/\b\w/g, (c) => c.toUpperCase());
+          .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
         const status = item.status
           .replace(/_/g, " ")
-          .replace(/\b\w/g, (c) => c.toUpperCase());
+          .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
 
         const createdAt = new Date(item.created_at).toLocaleDateString(
           "vi-VN",
@@ -140,10 +140,10 @@ const getProductById = (req, res) => {
         const transformedData = data.map((item) => {
           const productName = item.product_name
             .replace(/_/g, " ")
-            .replace(/\b\w/g, (c) => c.toUpperCase());
+            .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
           const status = item.status
             .replace(/_/g, " ")
-            .replace(/\b\w/g, (c) => c.toUpperCase());
+            .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
 
           const createdAt = new Date(item.created_at).toLocaleDateString(
             "vi-VN",
@@ -179,6 +179,7 @@ const addProducts = (req, res) => {
     sellingPrice,
     status,
     stock,
+    productCategories,
   } = req.body;
   const files = req.files;
   if (
@@ -211,6 +212,37 @@ const addProducts = (req, res) => {
         }
         if (results) {
           const lastId = results.insertId;
+          if (
+            Array.isArray(productCategories) &&
+            productCategories.length > 1
+          ) {
+            productCategories.forEach((category) => {
+              connection.query(
+                "INSERT INTO productCategories (product_id,category_id) VALUES (?,?)",
+                [lastId, category],
+                function (err, results, fields) {
+                  if (err) {
+                    return res
+                      .status(500)
+                      .json({ error: "Có lỗi xảy ra xin thử lại sau" });
+                  }
+                }
+              );
+            });
+          } else {
+            connection.query(
+              "INSERT INTO productCategories (product_id,category_id) VALUES (?,?)",
+              [lastId, productCategories],
+              function (err, results, fields) {
+                if (err) {
+                  return res
+                    .status(500)
+                    .json({ error: "Có lỗi xảy ra xin thử lại sau" });
+                }
+              }
+            );
+          }
+
           let completed = 0;
           files.forEach((file) => {
             const fileName = file.filename;
@@ -238,6 +270,67 @@ const addProducts = (req, res) => {
     );
   }
 };
+
+const productViewById = (req, res) => {
+  const id = req.params.id;
+  if (id) {
+    connection.query(
+      `SELECT products.*, 
+    (SELECT GROUP_CONCAT(images.image_name) FROM images WHERE products.id = images.product_id) AS images,
+    (SELECT GROUP_CONCAT(categories.category_name) FROM categories INNER JOIN productCategories ON categories.id = productCategories.category_id WHERE products.id = productCategories.product_id) AS category_names
+FROM products 
+WHERE products.id = (?)
+       `,
+      [id],
+      function (err, data) {
+        if (err) {
+          console.log(err);
+          return res
+            .status(500)
+            .json({ error: "Có lỗi xảy ra xin thử lại sau" });
+        }
+        if (data.length > 0) {
+          const transformedData = data.map((item) => {
+            const productName = item.product_name
+              .replace(/_/g, " ")
+              .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+            const status = item.status
+              .replace(/_/g, " ")
+              .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+            const categoriesArray = item.category_names
+              .split(",")
+              .map((category) => {
+                return category
+                  .replace(/_/g, " ")
+                  .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+              });
+
+            const createdAt = new Date(item.created_at).toLocaleDateString(
+              "vi-VN",
+              {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+              }
+            );
+
+            return {
+              ...item,
+              product_name: productName,
+              created_at: createdAt,
+              status: status,
+              category_names: categoriesArray,
+            };
+          });
+          return res
+            .status(200)
+            .json({ message: "Success", results: transformedData });
+        }
+      }
+    );
+  }
+};
+
 module.exports = {
   getProducts,
   getProductById,
@@ -245,4 +338,5 @@ module.exports = {
   viewProducts,
   viewDetail,
   viewDetailImgs,
+  productViewById,
 };

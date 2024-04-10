@@ -6,7 +6,7 @@ const request = axios.create({
 
 export const deleteRequest = async (path) => {
   const response = await request.delete(`${request.defaults.baseURL}${path}`);
-  return response.data;
+  return response;
 };
 export const postRequest = async (path, option) => {
   const response = await request.post(

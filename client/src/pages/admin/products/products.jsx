@@ -67,6 +67,9 @@ const Products = () => {
     setIsEdit(true);
     navigate("/dashboard/products/add");
   };
+  const handleView = (product) => {
+    navigate(`/dashboard/products/view/${product}`);
+  };
 
   useEffect(() => {
     fetchProducts();
@@ -102,32 +105,35 @@ const Products = () => {
                         .fill(0)
                         .map((_, i) => <ProductAdminSkeleton key={i} />)
                     : products &&
-                      products.map((products) => {
+                      products.map((product) => {
                         return (
-                          <TableRow key={products.id}>
-                            <TableCell>{products.id}</TableCell>
-                            <TableCell>{products.product_name}</TableCell>
-                            <TableCell>{products.stock}</TableCell>
-                            <TableCell>{products.selling_price}</TableCell>
-                            <TableCell>{products.imported_price}</TableCell>
-                            <TableCell>{products.status}</TableCell>
-                            <TableCell>{products.created_at}</TableCell>
+                          <TableRow key={product.id}>
+                            <TableCell>{product.id}</TableCell>
+                            <TableCell>{product.product_name}</TableCell>
+                            <TableCell>{product.stock}</TableCell>
+                            <TableCell>{product.selling_price}</TableCell>
+                            <TableCell>{product.imported_price}</TableCell>
+                            <TableCell>{product.status}</TableCell>
+                            <TableCell>{product.created_at}</TableCell>
                             <TableCell>
                               <div className="handleButtonAction">
                                 <button
                                   className="btn btn-danger"
-                                  onClick={() => handleDelete(products.id)}
+                                  onClick={() => handleDelete(product.id)}
                                 >
                                   Delete
                                 </button>
                                 &nbsp;
-                                <button className="btn btn-success">
+                                <button
+                                  className="btn btn-success"
+                                  onClick={() => handleView(product.id)}
+                                >
                                   View
                                 </button>
                                 &nbsp;
                                 <button
                                   className="btn btn-primary"
-                                  onClick={() => handleEdit(products)}
+                                  onClick={() => handleEdit(product)}
                                 >
                                   Edit
                                 </button>

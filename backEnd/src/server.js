@@ -5,6 +5,7 @@ const usersApi = require("./routes/users/usersApi");
 const cartsApi = require("./routes/carts/cartsApi");
 const categoriesApi = require("./routes/categories/categoriesApi");
 const productsApi = require("./routes/products/productsApi");
+const ordersApi = require("./routes/orders/ordersApi");
 const web = require("./routes/web");
 
 const app = express();
@@ -19,6 +20,7 @@ app.use("/users", usersApi);
 app.use("/categories", categoriesApi);
 app.use("/carts", cartsApi);
 app.use("/products", productsApi);
+app.use("/orders", ordersApi);
 
 app.listen(port, () => {
   console.log("Listening");

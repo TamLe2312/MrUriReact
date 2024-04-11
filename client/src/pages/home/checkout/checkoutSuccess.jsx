@@ -1,8 +1,30 @@
 import { Link } from "react-router-dom";
 import "./checkout.css";
 import DoneIcon from "@mui/icons-material/Done";
+import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
+import * as request from "../../../utilities/request";
 
 const CheckoutSuccess = () => {
+  const location = useLocation();
+  const VnpayReturn = async (orderId) => {
+    try {
+      /* const res =  */ await request.postRequest(`carts/vnpay-return`, {
+        orderId: orderId,
+      });
+      // console.log(res);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const vnp_TransactionStatus = searchParams.get("vnp_TransactionStatus");
+    if (vnp_TransactionStatus && vnp_TransactionStatus == "00") {
+      const vnp_TxnRef = searchParams.get("vnp_TxnRef");
+      VnpayReturn(vnp_TxnRef);
+    }
+  }, [location]);
   return (
     <>
       {/* Single Page Header start */}

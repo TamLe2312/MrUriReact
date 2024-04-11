@@ -16,8 +16,7 @@ import { CartContext } from "../../context/cartProvider";
 const Homepage = () => {
   const [products, setProducts] = useState();
   const [isLoading, setIsLoading] = useState(true);
-  const { handleSet } = useContext(UserContext);
-  const { user } = useContext(UserContext);
+  const { user, handleSet } = useContext(UserContext);
   const navigate = useNavigate();
   const { carts, dispatch } = useContext(CartContext);
 

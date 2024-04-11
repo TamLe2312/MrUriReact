@@ -15,8 +15,11 @@ const ProductDetail = () => {
   const navigate = useNavigate();
   const [product, setProduct] = useState();
   const [images, setImages] = useState([]);
+  const [redirectCategory, setRedirectCategory] = useState();
   const [viewImg, setViewImg] = useState(0);
   const [quantity, setQuantity] = useState(1);
+  const [relatedProducts, setRelatedProducts] = useState();
+  const [relatedCategories, setRelatedCategories] = useState();
   const { user } = useContext(UserContext);
   const { carts, dispatch } = useContext(CartContext);
   const handleView = (index) => {
@@ -71,8 +74,57 @@ const ProductDetail = () => {
       console.error(err);
     }
   };
+
+  const fetchCategories = async () => {
+    try {
+      const res = await request.getRequest(
+        `categories/relatedCategoriesDetail`
+      );
+      // console.log(res);
+      if (res.status === 200) {
+        setRelatedCategories(res.data.results);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const fetchRelatedProductsDetail = async (id) => {
+    try {
+      const res = await request.getRequest(
+        `products/relatedProductsDetail/${id}`
+      );
+      // console.log(res);
+      if (res.status === 200) {
+        const productsArray = res.data.results.map((product) => ({
+          ...product,
+          images: product.images.split(","),
+        }));
+        // console.log(productsArray);
+        setRelatedProducts(productsArray);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+  const fetchRedirectCategory = async (id) => {
+    try {
+      const res = await request.getRequest(`products/redirectCategory/${id}`);
+      // console.log(res);
+      if (res.status === 200) {
+        setRedirectCategory(res.data.results[0].category_slug);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
   useEffect(() => {
-    fetchProduct(id);
+    if (id) {
+      fetchProduct(id);
+      fetchCategories();
+      fetchRelatedProductsDetail(id);
+      fetchRedirectCategory(id);
+    }
   }, [id]);
   return (
     <>
@@ -220,71 +272,72 @@ const ProductDetail = () => {
                 <div className="col-lg-12">
                   <div className="mb-4">
                     <h4>Categories</h4>
-                    <ul className="list-unstyled productCategories">
-                      <li>
-                        <div className="d-flex justify-content-between fruite-name">
-                          <a href="#">Apples</a>
-                          <span>(3)</span>
-                        </div>
-                      </li>
-                      <li>
-                        <div className="d-flex justify-content-between fruite-name">
-                          <a href="#">Oranges</a>
-                          <span>(5)</span>
-                        </div>
-                      </li>
-                      <li>
-                        <div className="d-flex justify-content-between fruite-name">
-                          <a href="#">Strawbery</a>
-                          <span>(2)</span>
-                        </div>
-                      </li>
-                      <li>
-                        <div className="d-flex justify-content-between fruite-name">
-                          <a href="#">Banana</a>
-                          <span>(8)</span>
-                        </div>
-                      </li>
-                      <li>
-                        <div className="d-flex justify-content-between fruite-name">
-                          <a href="#">Pumpkin</a>
-                          <span>(5)</span>
-                        </div>
-                      </li>
-                    </ul>
+                    {relatedCategories && relatedCategories.length > 0 && (
+                      <ul className="list-unstyled productCategories">
+                        {relatedCategories.map((category) => (
+                          <li key={category.id}>
+                            <div className="d-flex justify-content-between fruite-name">
+                              <a href={`/categories/${category.category_slug}`}>
+                                <i className="fas fa-apple-alt me-2"></i>
+                                {category.category_name}
+                              </a>
+                              <span>({category.total_products})</span>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
                 </div>
                 <div className="col-lg-12">
                   <h4 className="mb-4">Featured products</h4>
-                  {Array(6)
-                    .fill(0)
-                    .map((_, index) => (
-                      <div
-                        className="d-flex align-items-center justify-content-start"
-                        key={index}
-                      >
+                  {relatedProducts &&
+                    relatedProducts.length > 0 &&
+                    relatedProducts.map((product) => {
+                      return (
                         <div
-                          className="rounded"
-                          style={{ width: "100px", height: "100px" }}
+                          className="d-flex align-items-center justify-content-start"
+                          key={product.id}
                         >
-                          <img
-                            src={imgFetures}
-                            className="img-fluid rounded"
-                            alt="Image"
-                          />
+                          <Link to={`/product/${product.id}`}>
+                            <div
+                              className="rounded me-4"
+                              style={{ width: "100px", height: "100px" }}
+                            >
+                              <img
+                                src={
+                                  APP_URL +
+                                  "/public/uploads/" +
+                                  product.images[0]
+                                }
+                                className="img-fluid rounded"
+                                alt=""
+                              />
+                            </div>
+                          </Link>
+                          <Link
+                            to={`/product/${product.id}`}
+                            style={{
+                              textDecoration: "none",
+                              color: "#000",
+                            }}
+                          >
+                            <div>
+                              <h6 className="mb-2">{product.product_name}</h6>
+                              <div className="d-flex mb-2">
+                                <h5 className="fw-bold me-2">
+                                  {product.selling_price} đ
+                                </h5>
+                              </div>
+                            </div>
+                          </Link>
                         </div>
-                        <div>
-                          <h6 className="mb-2">Big Banana</h6>
-                          <div className="d-flex mb-2">
-                            <h5 className="fw-bold me-2">2.99 $</h5>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
 
                   <div className="d-flex justify-content-center my-4">
                     <a
-                      href="#"
+                      href={`/categories/${redirectCategory}`}
                       className="btn border border-secondary px-4 py-3 rounded-pill text-primary w-100"
                     >
                       Vew More

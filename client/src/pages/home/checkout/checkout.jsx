@@ -165,7 +165,8 @@ const Checkout = () => {
       try {
         const res = await request.postRequest("carts/check-out", formDatas);
         if (res.status === 200) {
-          toast.success(res.data.message);
+          window.location.href = res.data.url;
+          /*   toast.success(res.data.message);
           if (user) {
             dispatch({
               type: "CLEAR_CART",
@@ -174,7 +175,7 @@ const Checkout = () => {
               },
             });
           }
-          navigate("/check-out/success");
+          navigate("/check-out/success"); */
         }
       } catch (err) {
         console.error(err);

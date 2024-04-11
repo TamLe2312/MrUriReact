@@ -19,6 +19,7 @@ const LazyVerifyToken = lazy(() =>
 const LazyAdminHome = lazy(() => import("./pages/admin/adminHome"));
 const LazyDashboard = lazy(() => import("./pages/admin/dashboard/dashboard"));
 const LazyUsers = lazy(() => import("./pages/admin/users/users"));
+const LazyProfile = lazy(() => import("./pages/home/profile/profile"));
 const LazyCategories = lazy(() =>
   import("./pages/admin/categories/categories")
 );
@@ -94,6 +95,14 @@ function App() {
             element={
               <Suspense fallback={<Loading />}>
                 <LazyCheckoutSuccess />
+              </Suspense>
+            }
+          />
+          <Route
+            path="profile"
+            element={
+              <Suspense fallback={<Loading />}>
+                <LazyProfile />
               </Suspense>
             }
           />

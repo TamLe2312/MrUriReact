@@ -160,7 +160,7 @@ const Navbar = () => {
                 <a href="/carts" className="position-relative me-4 my-auto">
                   <FiShoppingCart id="navbarHandleIcons" />
                 </a>
-                <a href="#" className="my-auto">
+                <a href="/profile" className="my-auto">
                   <FaUser id="navbarHandleIcons" />
                 </a>
               </div>

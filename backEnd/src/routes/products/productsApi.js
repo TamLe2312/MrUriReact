@@ -7,6 +7,9 @@ const {
   viewDetailImgs,
   getProductById,
   productViewById,
+  relatedProducts,
+  relatedProductsDetail,
+  redirectCategory,
 } = require("../../controller/products/products");
 
 const Router = express.Router();
@@ -27,10 +30,13 @@ const upload = multer({ storage: storage });
 
 Router.get("/", getProducts);
 Router.get("/product/:id", getProductById);
+Router.get("/relatedProducts/:id", relatedProducts);
+Router.get("/relatedProductsDetail/:id", relatedProductsDetail);
 Router.get("/view/:id", productViewById);
 Router.get("/view", viewProducts);
 Router.get("/viewDetail/:id", viewDetail);
 Router.get("/viewDetailImgs/:id", viewDetailImgs);
+Router.get("/redirectCategory/:id", redirectCategory);
 Router.post("/add", upload.array("images"), addProducts);
 
 module.exports = Router;

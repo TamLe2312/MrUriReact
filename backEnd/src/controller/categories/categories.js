@@ -133,8 +133,22 @@ const deleteCategory = (req, res) => {
 };
 
 const getProducts = (req, res) => {
-  const slug = req.params.category_slug;
-  if (slug) {
+  const { slug, sortType } = req.body;
+  if (slug && sortType) {
+    let orderByClause = "";
+    switch (sortType) {
+      case "default":
+        orderByClause = "ORDER BY products.id";
+        break;
+      case "lowToHigh":
+        orderByClause = "ORDER BY products.selling_price ASC";
+        break;
+      case "highToLow":
+        orderByClause = "ORDER BY products.selling_price DESC";
+        break;
+      default:
+        return res.status(400).json({ message: "Loại sắp xếp không hợp lệ" });
+    }
     connection.query(
       `SELECT products.id,
       products.product_name,
@@ -145,8 +159,9 @@ const getProducts = (req, res) => {
       INNER JOIN categories ON productCategories.category_id = categories.id
       INNER JOIN products ON productCategories.product_id = products.id
       INNER JOIN images ON products.id = images.product_id 
-      WHERE categories.category_slug = (?) GROUP BY products.id;
-      `,
+      WHERE categories.category_slug = (?)
+      GROUP BY products.id
+      ${orderByClause}`,
       [slug],
       (err, data) => {
         if (err) {
@@ -167,6 +182,8 @@ const getProducts = (req, res) => {
           return res
             .status(200)
             .json({ message: "Thành công", results: transformedData });
+        } else {
+          return res.status(404).json({ message: "Không có sản phẩm nào" });
         }
       }
     );
@@ -208,6 +225,72 @@ const editCategory = (req, res) => {
     });
   }
 };
+const relatedCategories = (req, res) => {
+  const id = req.params.id;
+  if (id) {
+    connection.query(
+      `SELECT c.id, COUNT(pc.product_id) AS total_products,c.category_name,c.category_slug
+      FROM categories c
+      LEFT JOIN productCategories pc ON c.id = pc.category_id
+      WHERE c.category_slug != ?
+      GROUP BY c.id
+      ORDER BY RAND()
+      LIMIT 5`,
+      [id],
+      (err, data) => {
+        if (err) {
+          console.log(err);
+          return res.status(500).json({ message: "Lỗi máy chủ" });
+        }
+        if (data.length > 0) {
+          const transformedData = data.map((item) => {
+            const categoryName = item.category_name
+              .replace(/_/g, " ")
+              .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+            return {
+              ...item,
+              category_name: categoryName,
+            };
+          });
+          return res
+            .status(200)
+            .json({ message: "Success", results: transformedData });
+        }
+      }
+    );
+  }
+};
+
+const relatedCategoriesDetail = (req, res) => {
+  connection.query(
+    `SELECT c.id, COUNT(pc.product_id) AS total_products,c.category_name,c.category_slug
+      FROM categories c
+      LEFT JOIN productCategories pc ON c.id = pc.category_id
+      GROUP BY c.id
+      ORDER BY RAND()
+      LIMIT 5`,
+    (err, data) => {
+      if (err) {
+        console.log(err);
+        return res.status(500).json({ message: "Lỗi máy chủ" });
+      }
+      if (data.length > 0) {
+        const transformedData = data.map((item) => {
+          const categoryName = item.category_name
+            .replace(/_/g, " ")
+            .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+          return {
+            ...item,
+            category_name: categoryName,
+          };
+        });
+        return res
+          .status(200)
+          .json({ message: "Success", results: transformedData });
+      }
+    }
+  );
+};
 
 module.exports = {
   getCategories,
@@ -216,4 +299,6 @@ module.exports = {
   addCategory,
   getProducts,
   editCategory,
+  relatedCategories,
+  relatedCategoriesDetail,
 };

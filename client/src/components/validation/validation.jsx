@@ -106,6 +106,10 @@ const Validation = (value, type) => {
     if (value.password !== value.confirmPassword) {
       errors.confirmPassword = "Password must be the same";
     }
+  } else if (type === "orders") {
+    if (!value.address) {
+      errors.address = "Address cannot be empty";
+    }
   }
 
   return errors;

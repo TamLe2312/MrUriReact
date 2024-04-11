@@ -1,0 +1,47 @@
+.profileContainer {
+  margin-top: 152px !important;
+}
+.profileRow {
+  display: inline-block;
+  width: 100%;
+}
+.profileRow .profileLeftContainer {
+  width: 20%;
+  float: left;
+  background: #f6f6f8;
+}
+.profileRow .profileRightContainer {
+  width: calc(80% - 30px);
+  float: right;
+  background: #f6f6f8;
+  padding: 12px;
+}
+
+.profileContainer .profileLeftContainer ul {
+  list-style: none;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  flex-direction: column;
+  padding: 0;
+  gap: 12px;
+}
+.profileContainer .profileLeftContainer ul > li {
+  cursor: pointer;
+}
+.profileContainer .profileLeftContainer ul > li.active {
+  color: #1976d2;
+}
+.handleButtonProfile {
+  margin-top: 12px;
+  border: 2px solid #000;
+  border-radius: 20px;
+  padding: 8px 34px;
+  background-color: transparent;
+  font-weight: 600;
+  transition: all 0.5s ease;
+}
+.handleButtonProfile:hover {
+  background-color: #000;
+  color: #fff;
+}

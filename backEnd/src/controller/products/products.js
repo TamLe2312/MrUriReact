@@ -9,7 +9,7 @@ const viewProducts = (req, res) => {
     products.status,
     GROUP_CONCAT(images.image_name) AS images FROM products INNER JOIN images ON products.id = images.product_id 
     GROUP BY
-    products.id;`;
+    products.id`;
   connection.query(sql, (err, data) => {
     if (err) {
       console.error(err);
@@ -330,6 +330,134 @@ WHERE products.id = (?)
     );
   }
 };
+const relatedProducts = (req, res) => {
+  const id = req.params.id;
+  if (id) {
+    connection.query(
+      `SELECT p.product_name,p.id,p.selling_price,GROUP_CONCAT(i.image_name) AS images
+      FROM productCategories pc
+      INNER JOIN categories c ON pc.category_id = c.id
+      INNER JOIN products p ON pc.product_id = p.id
+      INNER JOIN images i ON i.product_id = p.id
+      WHERE c.category_slug = ?
+      GROUP BY p.id
+      ORDER BY RAND()
+      LIMIT 3`,
+      [id],
+      (err, data) => {
+        if (err) {
+          console.log(err);
+          return res.status(500).json({ message: "Lỗi máy chủ" });
+        }
+        if (data.length > 0) {
+          const transformedData = data.map((item) => {
+            const productName = item.product_name
+              .replace(/_/g, " ")
+              .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+
+            return {
+              ...item,
+              product_name: productName,
+            };
+          });
+          return res
+            .status(200)
+            .json({ message: "Thành công", results: transformedData });
+        }
+      }
+    );
+  }
+};
+
+const relatedProductsDetail = (req, res) => {
+  const id = req.params.id;
+  if (id) {
+    connection.query(
+      `SELECT category_id FROM productCategories WHERE product_id = ?`,
+      [id],
+      (err, categories) => {
+        if (err) {
+          console.log(err);
+          return res.status(500).json({ message: "Lỗi máy chủ" });
+        }
+        let categoryIds;
+        if (Array.isArray(categories) && categories.length > 0) {
+          categoryIds = categories.map((category) => category.category_id);
+        } else {
+          categoryIds = [categories.category_id];
+        }
+        connection.query(
+          `SELECT DISTINCT product_id FROM productCategories WHERE category_id IN (?) AND product_id != ?`,
+          [categoryIds, id],
+          (err, relatedProducts) => {
+            if (err) {
+              console.log(err);
+              return res.status(500).json({ message: "Lỗi máy chủ" });
+            }
+            if (relatedProducts.length > 0) {
+              const relatedProductIds = relatedProducts.map(
+                (product) => product.product_id
+              );
+              connection.query(
+                `SELECT  products.id,
+                products.product_name,
+                products.selling_price,
+                products.status,
+                GROUP_CONCAT(images.image_name) AS images FROM products 
+                INNER JOIN images ON products.id = images.product_id 
+                WHERE id IN (?)
+                GROUP BY products.id
+                LIMIT 5`,
+                [relatedProductIds],
+                (err, data) => {
+                  if (err) {
+                    console.log(err);
+                    return res.status(500).json({ message: "Lỗi máy chủ" });
+                  }
+                  const transformedData = data.map((item) => {
+                    const productName = item.product_name
+                      .replace(/_/g, " ")
+                      .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+                    return {
+                      ...item,
+                      product_name: productName,
+                    };
+                  });
+                  return res
+                    .status(200)
+                    .json({ message: "Thành công", results: transformedData });
+                }
+              );
+            } else {
+              return res
+                .status(400)
+                .json({ message: "Không có sản phẩm liên quan" });
+            }
+          }
+        );
+      }
+    );
+  }
+};
+
+const redirectCategory = (req, res) => {
+  const id = req.params.id;
+  if (id) {
+    connection.query(
+      `SELECT categories.id,categories.category_name,categories.category_slug FROM productCategories 
+    INNER JOIN categories ON categories.id = productCategories.category_id
+    WHERE productCategories.product_id = (?)`,
+      [id],
+      (err, data) => {
+        if (err) {
+          console.log(err);
+          return res.status(500).json({ message: "Lỗi máy chủ" });
+        }
+        return res.status(200).json({ message: "Thành công", results: data });
+      }
+    );
+  }
+};
 
 module.exports = {
   getProducts,
@@ -339,4 +467,7 @@ module.exports = {
   viewDetail,
   viewDetailImgs,
   productViewById,
+  relatedProducts,
+  relatedProductsDetail,
+  redirectCategory,
 };

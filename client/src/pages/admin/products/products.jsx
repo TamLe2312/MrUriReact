@@ -11,13 +11,12 @@ import {
   TableRow,
 } from "@mui/material";
 import "./products.css";
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import ProductAdminSkeleton from "../../../components/skeleton/productAdminSkeleton/productAdminSkeleton";
-import { EditProductContext } from "../../../context/editProductProvider";
 import * as request from "../../../utilities/request";
 
 const Products = () => {
@@ -25,7 +24,6 @@ const Products = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const navigate = useNavigate();
-  const { setEditedProduct, setIsEdit } = useContext(EditProductContext);
   const [isLoading, setIsLoading] = useState(true);
 
   const handleChangePage = (event, newPage) => {
@@ -62,10 +60,7 @@ const Products = () => {
     }
   };
   const handleEdit = (product) => {
-    // console.log(product);
-    setEditedProduct(product);
-    setIsEdit(true);
-    navigate("/dashboard/products/add");
+    navigate(`/dashboard/products/edit/${product}`);
   };
   const handleView = (product) => {
     navigate(`/dashboard/products/view/${product}`);
@@ -133,7 +128,7 @@ const Products = () => {
                                 &nbsp;
                                 <button
                                   className="btn btn-primary"
-                                  onClick={() => handleEdit(product)}
+                                  onClick={() => handleEdit(product.id)}
                                 >
                                   Edit
                                 </button>

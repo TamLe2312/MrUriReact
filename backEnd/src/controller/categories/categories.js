@@ -292,6 +292,45 @@ const relatedCategoriesDetail = (req, res) => {
   );
 };
 
+const categoriesProductView = (req, res) => {
+  const { categories } = req.body;
+  if (categories && categories.length > 0) {
+    const categoryIds = categories.map((category) => category.value).join(",");
+    connection.query(
+      `SELECT c.id as value,c.category_name as label,c.status,p.category_name AS parent_category_name
+            FROM categories c
+            LEFT JOIN categories p ON c.parent_category = p.id
+            WHERE c.id NOT IN (${categoryIds})`,
+      (err, data) => {
+        if (err) {
+          console.log(err);
+          return res.status(500).json({ message: "Lỗi máy chủ" });
+        }
+        if (data.length > 0) {
+          const transformedData = data.map((item) => {
+            const categoryName = item.label
+              .replace(/_/g, " ")
+              .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+            const parentCategoryName = item.parent_category_name
+              ? item.parent_category_name
+                  .replace(/_/g, " ")
+                  .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase())
+              : null;
+            return {
+              ...item,
+              label: categoryName,
+              parent_category_name: parentCategoryName,
+            };
+          });
+          return res
+            .status(200)
+            .json({ message: "Success", results: transformedData });
+        }
+      }
+    );
+  }
+};
+
 module.exports = {
   getCategories,
   getParentCategories,
@@ -301,4 +340,5 @@ module.exports = {
   editCategory,
   relatedCategories,
   relatedCategoriesDetail,
+  categoriesProductView,
 };

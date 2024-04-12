@@ -10,6 +10,7 @@ const {
   editCategory,
   relatedCategories,
   relatedCategoriesDetail,
+  categoriesProductView,
 } = require("../../controller/categories/categories");
 
 const Router = express.Router();
@@ -22,5 +23,6 @@ Router.put("/edit/:id", upload.none(), editCategory);
 Router.post("/products", getProducts);
 Router.get("/relatedCategories/:id", relatedCategories);
 Router.get("/relatedCategoriesDetail/", relatedCategoriesDetail);
+Router.post("/productView", categoriesProductView);
 
 module.exports = Router;

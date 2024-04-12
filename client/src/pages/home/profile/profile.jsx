@@ -113,7 +113,7 @@ const Profile = () => {
 
   const fetchOrders = async (user) => {
     try {
-      const res = await request.getRequest(`orders/${user.id}`);
+      const res = await request.getRequest(`orders/user/${user.id}`);
       if (res.status === 200) {
         setOrders(res.data.results);
       }

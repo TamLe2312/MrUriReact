@@ -89,8 +89,6 @@ const AddProduct = () => {
   };
 
   const handleBack = () => {
-    setIsEdit(false);
-    setEditedProduct();
     navigate("/dashboard/products");
   };
 
@@ -99,10 +97,12 @@ const AddProduct = () => {
     let isValid = true;
     setErrors(errors);
 
-    setErrors((prevErrors) => ({
-      ...prevErrors,
-      images: "Images cannot be empty",
-    }));
+    if (!images) {
+      setErrors((prevErrors) => ({
+        ...prevErrors,
+        images: "Images cannot be empty",
+      }));
+    }
     if (
       Object.keys(errors).length !== 0 ||
       !Object.values(formData).every((value) => value !== "")

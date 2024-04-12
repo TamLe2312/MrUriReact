@@ -276,11 +276,12 @@ const productViewById = (req, res) => {
   if (id) {
     connection.query(
       `SELECT products.*, 
-    (SELECT GROUP_CONCAT(images.image_name) FROM images WHERE products.id = images.product_id) AS images,
-    (SELECT GROUP_CONCAT(categories.category_name) FROM categories INNER JOIN productCategories ON categories.id = productCategories.category_id WHERE products.id = productCategories.product_id) AS category_names
-FROM products 
-WHERE products.id = (?)
-       `,
+        (SELECT GROUP_CONCAT(images.image_name) FROM images WHERE products.id = images.product_id) AS images,
+        (SELECT GROUP_CONCAT(CONCAT(categories.category_name, ':', categories.id)) FROM categories INNER JOIN productCategories ON categories.id = productCategories.category_id WHERE products.id = productCategories.product_id) AS category_names
+      FROM products 
+      LEFT JOIN productCategories ON products.id = productCategories.product_id
+      LEFT JOIN categories ON productCategories.category_id = categories.id
+      WHERE products.id = (?)`,
       [id],
       function (err, data) {
         if (err) {
@@ -300,9 +301,13 @@ WHERE products.id = (?)
             const categoriesArray = item.category_names
               .split(",")
               .map((category) => {
-                return category
-                  .replace(/_/g, " ")
-                  .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+                const [categoryName, categoryId] = category.split(":");
+                return {
+                  label: categoryName
+                    .replace(/_/g, " ")
+                    .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase()),
+                  value: parseInt(categoryId),
+                };
               });
 
             const createdAt = new Date(item.created_at).toLocaleDateString(
@@ -330,6 +335,7 @@ WHERE products.id = (?)
     );
   }
 };
+
 const relatedProducts = (req, res) => {
   const id = req.params.id;
   if (id) {
@@ -458,6 +464,119 @@ const redirectCategory = (req, res) => {
     );
   }
 };
+const editProduct = (req, res) => {
+  const {
+    id,
+    product_name,
+    product_description,
+    stock,
+    category_names,
+    selling_price,
+    imported_price,
+    status,
+  } = req.body;
+  if (
+    id &&
+    product_name &&
+    product_description &&
+    stock &&
+    category_names &&
+    selling_price &&
+    imported_price &&
+    status
+  ) {
+    // Lấy danh sách id của các danh mục mới
+    const newCategoryIds = category_names.map((category) => category.value);
+
+    // Lấy danh sách id của các danh mục hiện tại trong productCategories
+    connection.query(
+      `SELECT category_id FROM productCategories WHERE product_id = ?`,
+      [id],
+      (err, currentCategories) => {
+        if (err) {
+          console.log(err);
+          return res.status(500).json({ message: "Lỗi máy chủ" });
+        }
+
+        // Lấy danh sách id của các danh mục hiện tại
+        const currentCategoryIds = currentCategories.map(
+          (item) => item.category_id
+        );
+
+        // Tìm danh mục cần thêm (có trong category_names mới nhưng không có trong danh sách hiện tại)
+        const categoriesToAdd = newCategoryIds.filter(
+          (categoryId) => !currentCategoryIds.includes(categoryId)
+        );
+
+        // Tìm danh mục cần xóa (có trong danh sách hiện tại nhưng không có trong category_names mới)
+        const categoriesToDelete = currentCategoryIds.filter(
+          (categoryId) => !newCategoryIds.includes(categoryId)
+        );
+
+        // Thêm các danh mục mới vào bảng productCategories
+        if (categoriesToAdd.length > 0) {
+          const addQuery = `INSERT INTO productCategories (product_id, category_id) VALUES ?`;
+          const addValues = categoriesToAdd.map((categoryId) => [
+            id,
+            categoryId,
+          ]);
+          connection.query(addQuery, [addValues], (err, addResults) => {
+            if (err) {
+              console.log(err);
+              return res
+                .status(500)
+                .json({ message: "Lỗi máy chủ khi thêm danh mục" });
+            }
+          });
+        }
+
+        // Xóa các danh mục không còn nằm trong category_names mới
+        if (categoriesToDelete.length > 0) {
+          const deleteQuery = `DELETE FROM productCategories WHERE product_id = ? AND category_id IN (?)`;
+          connection.query(
+            deleteQuery,
+            [id, categoriesToDelete],
+            (err, deleteResults) => {
+              if (err) {
+                console.log(err);
+                return res
+                  .status(500)
+                  .json({ message: "Lỗi máy chủ khi xóa danh mục" });
+              }
+            }
+          );
+        }
+        const productNameValid = product_name
+          .toLowerCase()
+          .replace(/\s+/g, "_");
+        const stockValid = parseInt(stock);
+        const sellingPriceValid = parseFloat(selling_price);
+        const importedPriceValid = parseFloat(imported_price);
+        connection.query(
+          `UPDATE products SET product_name = (?),product_description = (?),stock = (?),selling_price = (?),imported_price = (?),status = (?) WHERE id = (?)`,
+          [
+            productNameValid,
+            product_description,
+            stockValid,
+            sellingPriceValid,
+            importedPriceValid,
+            status,
+            id,
+          ],
+          (err, results) => {
+            if (err) {
+              console.log(err);
+              return res.status(500).json({ message: "Lỗi máy chủ" });
+            }
+            if (results) {
+              return res.status(200).json({ message: "Edit success" });
+            }
+          }
+        );
+      }
+    );
+  }
+};
 
 module.exports = {
   getProducts,
@@ -470,4 +589,5 @@ module.exports = {
   relatedProducts,
   relatedProductsDetail,
   redirectCategory,
+  editProduct,
 };

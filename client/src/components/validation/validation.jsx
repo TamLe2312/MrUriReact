@@ -110,6 +110,22 @@ const Validation = (value, type) => {
     if (!value.address) {
       errors.address = "Address cannot be empty";
     }
+  } else if (type === "editProduct") {
+    if (!value.product_name) {
+      errors.product_name = "Product name cannot be empty";
+    }
+    if (!value.stock) {
+      errors.stock = "Stock cannot be empty";
+    }
+    if (!value.product_description) {
+      errors.product_description = "Product description cannot be empty";
+    }
+    if (!value.selling_price) {
+      errors.selling_price = "Selling price cannot be empty";
+    }
+    if (!value.imported_price) {
+      errors.imported_price = "Imported price cannot be empty";
+    }
   }
 
   return errors;

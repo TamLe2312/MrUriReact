@@ -1,7 +1,6 @@
 import { Container, Grid, Paper } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
-import { EditProductContext } from "../../../context/editProductProvider";
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import "./products.css";
 import * as request from "../../../utilities/request";
 import { v4 as uuidv4 } from "uuid";
@@ -10,15 +9,12 @@ import { APP_URL } from "../../../config/env";
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { setEditedProduct, setIsEdit } = useContext(EditProductContext);
   const [mode, setMode] = useState("information");
   const [images, setImages] = useState([]);
   const [product, setProduct] = useState({});
   const [categories, setCategories] = useState("");
 
   const handleBack = () => {
-    setIsEdit(false);
-    setEditedProduct();
     navigate("/dashboard/products");
   };
 
@@ -30,7 +26,10 @@ const ProductDetail = () => {
     try {
       const res = await request.getRequest(`products/view/${id}`);
       if (res.status === 200) {
-        setCategories(res.data.results[0].category_names.join(", "));
+        const categories = res.data.results[0].category_names
+          .map((category) => category.name)
+          .join(",");
+        setCategories(categories);
         setProduct(res.data.results[0]);
         const imgs = res.data.results[0].images.split(",");
         setImages(imgs);

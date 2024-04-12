@@ -25,6 +25,10 @@ const LazyCategories = lazy(() =>
 );
 const LazyAddProduct = lazy(() => import("./pages/admin/products/addProduct"));
 const LazyProducts = lazy(() => import("./pages/admin/products/products"));
+const LazyEditProduct = lazy(() =>
+  import("./pages/admin/products/editProduct")
+);
+const LazyOrders = lazy(() => import("./pages/admin/orders/orders"));
 const LazyCarts = lazy(() => import("./pages/home/carts/carts"));
 const LazyShopPage = lazy(() => import("./pages/home/shop/shop"));
 const LazyCheckout = lazy(() => import("./pages/home/checkout/checkout"));
@@ -181,12 +185,28 @@ function App() {
                 </Suspense>
               }
             />
+            <Route
+              path="edit/:id"
+              element={
+                <Suspense fallback={<Loading />}>
+                  <LazyEditProduct />
+                </Suspense>
+              }
+            />
           </Route>
           <Route
             path="categories"
             element={
               <Suspense fallback={<Loading />}>
                 <LazyCategories />
+              </Suspense>
+            }
+          />
+          <Route
+            path="orders"
+            element={
+              <Suspense fallback={<Loading />}>
+                <LazyOrders />
               </Suspense>
             }
           />

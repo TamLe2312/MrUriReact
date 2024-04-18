@@ -12,7 +12,6 @@ import {
 } from "@mui/material";
 import "./products.css";
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
@@ -48,13 +47,15 @@ const Products = () => {
   };
 
   const handleDelete = async (id) => {
+    setIsLoading(true);
     try {
-      const res = await axios.delete(`http://localhost:3001/products/${id}`);
+      const res = await request.postRequest("products/delete", {
+        id: id,
+      });
       if (res.status === 200) {
-        toast.success("Delete Success");
+        toast.success(res.data.message);
         fetchProducts();
       }
-      // console.log(res);
     } catch (err) {
       console.error(err);
     }

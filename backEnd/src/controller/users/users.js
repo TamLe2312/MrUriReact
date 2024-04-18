@@ -50,7 +50,7 @@ const getUsers = (req, res) => {
 const getUserById = (req, res) => {
   const id = req.params.id;
   if (id) {
-    const sql = "SELECT username,role,email FROM users WHERE id = (?)";
+    const sql = "SELECT username,role,email,name FROM users WHERE id = (?)";
     connection.query(sql, [id], (err, data) => {
       if (err) {
         return res.status(500).json({ message: "Lỗi máy chủ" });
@@ -249,6 +249,156 @@ const verifyTokenPassword = (req, res) => {
   }
 };
 
+const addUser = (req, res) => {
+  const { username, password, email, role } = req.body;
+  if (username && password && email && role) {
+    bcrypt.hash(password, saltRounds, function (err, hash) {
+      if (!err) {
+        connection.query(
+          "SELECT * FROM Users WHERE username = ? OR email = ?",
+          [username, email],
+          function (err, results, fields) {
+            if (err) {
+              return res.status(500).json({ error: "Lỗi máy chủ" });
+            }
+            if (results.length > 0) {
+              return res
+                .status(400)
+                .json({ message: "Username or email was taken" });
+            } else {
+              const usernameValid = username.toLowerCase();
+              const emailValid = email.toLowerCase();
+              connection.query(
+                "INSERT INTO Users (username, password, email,role) VALUES (?, ?, ?,?)",
+                [usernameValid, hash, emailValid, role],
+                function (err, results, fields) {
+                  if (err) {
+                    return res.status(500).json({ error: "Lỗi máy chủ" });
+                  }
+                  if (results) {
+                    res.status(200).json({ message: "Create user success" });
+                  }
+                }
+              );
+            }
+          }
+        );
+      }
+    });
+  }
+};
+const editUser = (req, res) => {
+  const { username, role, email } = req.body;
+  if (username && role && email) {
+    const usernameValid = username.toLowerCase();
+    const emailValid = email.toLowerCase();
+    connection.query(
+      "UPDATE Users SET username = (?),email = (?),role = (?) WHERE username = ? OR email = ?",
+      [usernameValid, emailValid, role, username, email],
+      function (err, results, fields) {
+        if (err) {
+          return res.status(500).json({ error: "Lỗi máy chủ" });
+        }
+        if (results) {
+          res.status(200).json({ message: "Edit user success" });
+        }
+      }
+    );
+  }
+};
+
+const deleteUser = (req, res) => {
+  const id = req.params.id;
+  if (id) {
+    connection.query(
+      `DELETE FROM users WHERE id = (?)`,
+      [id],
+      (err, results) => {
+        if (err) {
+          return res.status(500).json({ message: "Lỗi máy chủ" });
+        }
+        if (results) {
+          return res.status(200).json({ message: "Delete Success" });
+        }
+      }
+    );
+  }
+};
+
+const editProfile = (req, res) => {
+  const { username, email, name, id } = req.body;
+  if (username && email && name && id) {
+    const usernameValid = username.toLowerCase();
+    const emailValid = email.toLowerCase();
+    if (name === "None") {
+      connection.query(
+        `UPDATE users SET username = (?),email = (?),name = (?) WHERE id = (?)`,
+        [usernameValid, emailValid, null, id],
+        (err, results) => {
+          if (err) {
+            return res.status(500).json({ message: "Lỗi máy chủ" });
+          }
+          if (results) {
+            return res.status(200).json({ message: "Edit Success" });
+          }
+        }
+      );
+    } else {
+      const nameValid = name.toLowerCase();
+      connection.query(
+        `UPDATE users SET username = (?),email = (?),name = (?) WHERE id = (?)`,
+        [usernameValid, emailValid, nameValid, id],
+        (err, results) => {
+          if (err) {
+            return res.status(500).json({ message: "Lỗi máy chủ" });
+          }
+          if (results) {
+            return res.status(200).json({ message: "Edit Success" });
+          }
+        }
+      );
+    }
+  }
+};
+const editPassword = (req, res) => {
+  const { currentPassword, newPassword, id } = req.body;
+  if (currentPassword && newPassword && id) {
+    connection.query(
+      `SELECT password FROM users WHERE id = (?)`,
+      [id],
+      async (err, data) => {
+        if (err) {
+          return res.status(500).json({ message: "Lỗi máy chủ" });
+        }
+        if (data) {
+          const match = await bcrypt.compare(currentPassword, data[0].password);
+          if (match) {
+            const myPlaintextPassword = newPassword;
+            bcrypt.hash(myPlaintextPassword, saltRounds, function (err, hash) {
+              if (!err) {
+                connection.query(
+                  `UPDATE users SET password = (?) WHERE id = (?)`,
+                  [hash, id],
+                  (err, results) => {
+                    if (err) {
+                      return res.status(500).json({ message: "Lỗi máy chủ" });
+                    }
+                    if (results) {
+                      return res.status(200).json({ message: "Edit Success" });
+                    }
+                  }
+                );
+              }
+            });
+          } else {
+            return res.status(400).json({ message: "Password invalid" });
+          }
+        }
+      }
+    );
+  }
+};
+
 module.exports = {
   verifyToken,
   getUsers,
@@ -257,4 +407,9 @@ module.exports = {
   signUp,
   forgotPassword,
   verifyTokenPassword,
+  deleteUser,
+  editUser,
+  addUser,
+  editProfile,
+  editPassword,
 };

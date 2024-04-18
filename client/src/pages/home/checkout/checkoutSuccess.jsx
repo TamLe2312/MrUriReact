@@ -1,11 +1,40 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "./checkout.css";
 import DoneIcon from "@mui/icons-material/Done";
-import { useEffect } from "react";
+import { useContext, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import * as request from "../../../utilities/request";
+import { UserContext } from "../../../context/userProvider";
+import { toast } from "sonner";
 
 const CheckoutSuccess = () => {
+  const navigate = useNavigate();
+
+  const { user, handleSet } = useContext(UserContext);
+  const fetchUser = async (token) => {
+    try {
+      const res = await request.postRequest("users/verifyToken", { token });
+      if (res.status === 200) {
+        // console.log(res);
+        handleSet(res.data.results);
+      }
+    } catch (err) {
+      if (err.response.status === 500) {
+        localStorage.removeItem("token");
+      }
+      console.error(err);
+    }
+  };
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      fetchUser(token);
+    } else {
+      handleSet(null);
+      toast.error("You need to sign in first");
+      navigate("/sign-in");
+    }
+  }, []);
   const location = useLocation();
   const VnpayReturn = async (orderId) => {
     try {

@@ -11,6 +11,9 @@ const {
   relatedProductsDetail,
   redirectCategory,
   editProduct,
+  editImage,
+  deleteProduct,
+  searchProducts,
 } = require("../../controller/products/products");
 
 const Router = express.Router();
@@ -35,10 +38,13 @@ Router.get("/relatedProducts/:id", relatedProducts);
 Router.get("/relatedProductsDetail/:id", relatedProductsDetail);
 Router.get("/view/:id", productViewById);
 Router.get("/view", viewProducts);
+Router.get("/search/:value", searchProducts);
 Router.get("/viewDetail/:id", viewDetail);
 Router.get("/viewDetailImgs/:id", viewDetailImgs);
 Router.get("/redirectCategory/:id", redirectCategory);
 Router.post("/add", upload.array("images"), addProducts);
 Router.post("/editInformation", editProduct);
+Router.post("/delete", deleteProduct);
+Router.post("/editImage", upload.array("images"), editImage);
 
 module.exports = Router;

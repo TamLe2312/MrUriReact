@@ -1,4 +1,5 @@
 const connection = require("../../config/database");
+const moment = require("moment");
 
 require("dotenv").config();
 
@@ -175,6 +176,73 @@ const editStatus = (req, res) => {
   }
 };
 
+const getChart = (req, res) => {
+  let dataLast7Days = [];
+  let dataLast12Months = [];
+
+  const fetchDataLast7Days = new Promise((resolve, reject) => {
+    let count = 0;
+    for (let i = 0; i < 7; i++) {
+      const day = moment().subtract(i, "days").format("YYYY-MM-DD");
+      connection.query(
+        `SELECT SUM(total) as total FROM orders WHERE DATE(created_at) = '${day}'`,
+        (err, datas) => {
+          if (err) {
+            reject("Lỗi máy chủ");
+          } else {
+            dataLast7Days.push({ date: day, total: datas[0] });
+            count++;
+            if (count === 7) resolve();
+          }
+        }
+      );
+    }
+  });
+
+  const fetchDataLast12Months = new Promise((resolve, reject) => {
+    let count = 0;
+    for (let i = 0; i <= 11; i++) {
+      const firstDayOfMonth = moment()
+        .subtract(i, "months")
+        .startOf("month")
+        .format("YYYY-MM-DD");
+      const lastDayOfMonth = moment()
+        .subtract(i, "months")
+        .endOf("month")
+        .format("YYYY-MM-DD");
+      const query = `SELECT SUM(total) AS total FROM orders WHERE DATE(created_at) BETWEEN '${firstDayOfMonth}' AND '${lastDayOfMonth}'`;
+      connection.query(query, (err, datas) => {
+        if (err) {
+          reject("Lỗi máy chủ");
+        } else {
+          const monthlyData = datas[0];
+          dataLast12Months.push({
+            month: moment(firstDayOfMonth).format("MMMM"),
+            year: moment(firstDayOfMonth).format("YYYY"),
+            total: monthlyData,
+          });
+          count++;
+          if (count === 12) resolve();
+        }
+      });
+    }
+  });
+
+  Promise.all([fetchDataLast7Days, fetchDataLast12Months])
+    .then(() => {
+      return res.status(200).json({
+        message: "Success",
+        results: {
+          dataLast7Days: dataLast7Days,
+          dataLast12Months: dataLast12Months,
+        },
+      });
+    })
+    .catch((error) => {
+      return res.status(500).json({ message: error });
+    });
+};
+
 module.exports = {
   getOrders,
   editOrder,
@@ -183,4 +251,5 @@ module.exports = {
   deleteOrder,
   getAll,
   editStatus,
+  getChart,
 };

@@ -8,12 +8,16 @@ import { APP_URL } from "../../../config/env";
 import Select from "react-select";
 import Validation from "../../../components/validation/validation";
 import { toast } from "sonner";
+import DeleteIcon from "@mui/icons-material/Delete";
+import FileUploadIcon from "@mui/icons-material/FileUpload";
 
 const EditProduct = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [mode, setMode] = useState("information");
   const [images, setImages] = useState([]);
+  const [imageDelete, setImageDelete] = useState([]);
+  const [imageAdd, setImageAdd] = useState([]);
   const [product, setProduct] = useState({});
   const [options, setOptions] = useState([]);
   const [errors, setErrors] = useState({});
@@ -117,20 +121,41 @@ const EditProduct = () => {
 
     return isValid;
   };
-  const handleSubmit = async () => {
-    const isValid = validate();
-    if (isValid) {
+  const handleSubmit = async (type) => {
+    if (type === "editInform") {
+      const isValid = validate();
+      if (isValid) {
+        try {
+          const res = await request.postRequest(`products/editInformation`, {
+            id: product.id,
+            product_name: product.product_name,
+            stock: product.stock,
+            product_description: product.product_description,
+            category_names: product.category_names,
+            selling_price: product.selling_price,
+            imported_price: product.imported_price,
+            status: product.status,
+          });
+          if (res.status === 200) {
+            toast.success(res.data.message);
+            navigate("/dashboard/products");
+          }
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    } else {
+      // console.log(imageDelete);
       try {
-        const res = await request.postRequest(`products/editInformation`, {
-          id: product.id,
-          product_name: product.product_name,
-          stock: product.stock,
-          product_description: product.product_description,
-          category_names: product.category_names,
-          selling_price: product.selling_price,
-          imported_price: product.imported_price,
-          status: product.status,
+        const formDatas = new FormData();
+        imageDelete.forEach((image) => {
+          formDatas.append("imageDelete", image);
         });
+        imageAdd.forEach((image) => {
+          formDatas.append("images", image.image);
+        });
+        formDatas.append("id", product.id);
+        const res = await request.postRequest(`products/editImage`, formDatas);
         if (res.status === 200) {
           toast.success(res.data.message);
           navigate("/dashboard/products");
@@ -139,6 +164,48 @@ const EditProduct = () => {
         console.error(err);
       }
     }
+  };
+
+  const handleDeleteImg = (image) => {
+    if (!image.image) {
+      const filteredImages = images.filter((img) => img !== image);
+      const deletedImage = images.find((img) => img === image);
+      setImages(filteredImages);
+      setImageDelete([...imageDelete, deletedImage]);
+    } else {
+      const filteredImages = images.filter((img) => img !== image);
+      setImages(filteredImages);
+    }
+  };
+
+  const handleAdd = (e) => {
+    const files = e.target.files;
+    const newImageFiles = [];
+
+    if (!files || files.length === 0) {
+      toast.error("You must upload atleast one image");
+      return;
+    }
+    for (let i = 0; i < files.length; i++) {
+      if (!files[i].type.startsWith("image/")) {
+        toast.error("You was upload wrong type of image");
+        return;
+      }
+
+      const maxSizeInBytes = 10 * 1024 * 1024;
+      if (files[i].size > maxSizeInBytes) {
+        toast.error("Image too heavy");
+        return;
+      }
+      newImageFiles.push({
+        image: files[i],
+        url: URL.createObjectURL(files[i]),
+      });
+    }
+
+    setImages([...images, ...newImageFiles]);
+    setImageAdd([...images, ...newImageFiles]);
+    e.target.value = null;
   };
 
   return (
@@ -376,7 +443,7 @@ const EditProduct = () => {
                           <div className="col-md-12 mt-2">
                             <button
                               className="btn btn-primary"
-                              onClick={handleSubmit}
+                              onClick={() => handleSubmit("editInform")}
                             >
                               Submit
                             </button>
@@ -388,18 +455,69 @@ const EditProduct = () => {
                     <div className="col-md-10">
                       <div className="row imageRowContainer">
                         {images && images.length > 0 ? (
-                          images.map((img) => {
-                            return (
-                              <div className="col-md-3" key={uuidv4()}>
-                                <div className="imageProductViewContainer">
-                                  <img
-                                    draggable="false"
-                                    src={APP_URL + "/public/uploads/" + img}
+                          <>
+                            <div className="row">
+                              <div className="col-md-12">
+                                <div className="form-group imageInput">
+                                  <label htmlFor="images">
+                                    <FileUploadIcon />
+                                    Upload Images
+                                  </label>
+                                  <input
+                                    type="file"
+                                    className={
+                                      errors.images
+                                        ? "form-control is-invalid"
+                                        : "form-control"
+                                    }
+                                    id="images"
+                                    name="images"
+                                    multiple
+                                    onChange={handleAdd}
                                   />
+                                  {errors.images && (
+                                    <div
+                                      id="validationServerBrandFeedback"
+                                      className="invalid-feedback"
+                                    >
+                                      {errors.images}
+                                    </div>
+                                  )}
                                 </div>
                               </div>
-                            );
-                          })
+                            </div>
+                            {images.map((img) => {
+                              return (
+                                <div className="col-md-3" key={uuidv4()}>
+                                  <div className="imageProductViewContainer">
+                                    <img
+                                      draggable="false"
+                                      src={
+                                        img.url
+                                          ? img.url
+                                          : APP_URL + "/public/uploads/" + img
+                                      }
+                                    />
+                                    <DeleteIcon
+                                      className="trashIcon"
+                                      onClick={() => handleDeleteImg(img)}
+                                    />
+                                  </div>
+                                </div>
+                              );
+                            })}
+
+                            <div className="row">
+                              <div className="col-md-12 mt-2">
+                                <button
+                                  className="btn btn-primary"
+                                  onClick={() => handleSubmit("deleteImage")}
+                                >
+                                  Submit
+                                </button>
+                              </div>
+                            </div>
+                          </>
                         ) : (
                           <p>Không có ảnh</p>
                         )}

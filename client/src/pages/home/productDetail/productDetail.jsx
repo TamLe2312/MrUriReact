@@ -104,7 +104,7 @@ const ProductDetail = () => {
         setRelatedProducts(productsArray);
       }
     } catch (err) {
-      console.error(err);
+      // console.error(err);
     }
   };
   const fetchRedirectCategory = async (id) => {

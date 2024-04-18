@@ -9,11 +9,13 @@ const {
   deleteOrder,
   getAll,
   editStatus,
+  getChart,
 } = require("../../controller/orders/orders");
 const Router = express.Router();
 
 Router.get("/user/:id", getOrders);
 Router.get("/getAll", getAll);
+Router.get("/chart", getChart);
 Router.post("/edit/:id", editOrder);
 Router.post("/editStatus", editStatus);
 Router.post("/cancel", cancelOrder);

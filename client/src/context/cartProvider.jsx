@@ -20,7 +20,9 @@ function CartProvider({ children }) {
         return res.data.results;
       }
     } catch (err) {
-      console.error(err);
+      if (err.response.status === 400) {
+        toast.error(err.response.data.message);
+      }
     }
   };
   const deleteCart = async (cart) => {

@@ -107,9 +107,25 @@
 .productViewContainer .col-md-10 .imageProductViewContainer {
   width: 200px;
   height: 200px;
+  position: relative;
 }
 .productViewContainer .col-md-10 .imageProductViewContainer img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+.productViewContainer .col-md-10 .imageProductViewContainer .trashIcon {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 4px;
+  color: #fff;
+  background-color: #ff5353;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+}
+.productViewContainer .col-md-10 .imageProductViewContainer .trashIcon:hover {
+  background-color: #b60000;
 }

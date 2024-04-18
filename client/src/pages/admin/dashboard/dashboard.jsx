@@ -32,29 +32,15 @@ const Dashboard = () => {
       <p>Dashboard</p>
       <Grid container spacing={3}>
         {/* Chart */}
-        <Grid item xs={12} md={8} lg={9}>
+        <Grid item xs={12} md={12} lg={12}>
           <Paper
             sx={{
               p: 2,
               display: "flex",
               flexDirection: "column",
-              height: 240,
             }}
           >
             <Chart />
-          </Paper>
-        </Grid>
-        {/* Recent Deposits */}
-        <Grid item xs={12} md={4} lg={3}>
-          <Paper
-            sx={{
-              p: 2,
-              display: "flex",
-              flexDirection: "column",
-              height: 240,
-            }}
-          >
-            <Deposits />
           </Paper>
         </Grid>
         {/* Recent Orders */}

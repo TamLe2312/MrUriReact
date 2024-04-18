@@ -24,7 +24,8 @@ const Users = () => {
   const [formData, setFormData] = useState({
     username: "",
     email: "",
-    role: "0",
+    role: "user",
+    password: "",
   });
 
   const handleChangePage = (event, newPage) => {
@@ -42,60 +43,84 @@ const Users = () => {
   };
 
   const handleUser = async () => {
+    setIsLoading(true);
     if (isEdit) {
       try {
-        await axios.put(`http://localhost:3001/users/${formData.id}`, formData);
-        // console.log(res);
-        setIsEdit(false);
-        setFormData({
-          username: "",
-          email: "",
-          password: "",
-          role: "0",
+        const res = await request.postRequest(`users/edit`, {
+          username: formData.username,
+          email: formData.email,
+          role: formData.role,
         });
-        fetchUser();
-        toast.success("Edit Success");
+        // console.log(res);
+        if (res.status === 200) {
+          setFormData({
+            username: "",
+            email: "",
+            password: "",
+            role: "user",
+          });
+          fetchUser();
+          setIsEdit(false);
+          toast.success(res.data.message);
+        }
       } catch (err) {
-        console.error(err);
+        if (err.response.status === 400) {
+          toast.error(err.response.data.message);
+        }
+      } finally {
+        setIsLoading(false);
       }
     } else {
-      await axios
-        .post(`http://localhost:3001/users`, formData)
-        .then((response) => {
-          if (response.status) {
-            fetchUser();
-            setFormData({
-              username: "",
-              email: "",
-              password: "",
-              role: "0",
-            });
-            toast.success("Add Success");
-          }
-        })
-        .catch((error) => {
-          console.error("Error adding post:", error);
-          toast.error("Add Failed");
+      try {
+        const res = await request.postRequest(`users/add`, {
+          username: formData.username,
+          email: formData.email,
+          password: formData.password,
+          role: formData.username,
         });
+        if (res.status === 200) {
+          toast.success(res.data.message);
+          fetchUser();
+        }
+      } catch (err) {
+        if (err.response.status === 400) {
+          toast.error(err.response.data.message);
+        }
+      }
     }
   };
 
   const handleDelete = async (id) => {
     try {
-      const res = await axios.delete(`http://localhost:3001/users/${id}`);
+      const res = await request.deleteRequest(`users/delete/${id}`);
+      // console.log(res);
       if (res.status === 200) {
-        toast.success("Delete Success");
+        toast.success(res.data.message);
         fetchUser();
       }
-      // console.log(res);
     } catch (err) {
       console.error(err);
     }
   };
 
-  const handleEdit = (user) => {
+  const handleEdit = async (user) => {
+    setIsLoading(true);
     setIsEdit(true);
-    setFormData(user);
+    try {
+      const res = await request.getRequest(`users/user/${user.id}`);
+      if (res.status === 200) {
+        const userData = res.data.results[0];
+        setFormData({
+          username: userData.username,
+          email: userData.email,
+          role: userData.role,
+        });
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const fetchUser = async () => {
@@ -146,17 +171,19 @@ const Users = () => {
                 onChange={handleChange}
               />
             </div>
-            <div className="form-group">
-              <label>Password</label>
-              <input
-                type="password"
-                className="form-control"
-                id="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-              />
-            </div>
+            {!isEdit && (
+              <div className="form-group">
+                <label>Password</label>
+                <input
+                  type="password"
+                  className="form-control"
+                  id="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                />
+              </div>
+            )}
             <div className="form-group">
               <label>Role</label>
               <select
@@ -166,8 +193,8 @@ const Users = () => {
                 name="role"
                 value={formData.role}
               >
-                <option value="0">User</option>
-                <option value="1">Admin</option>
+                <option value="user">User</option>
+                <option value="admin">Admin</option>
               </select>
             </div>
             <button
@@ -203,9 +230,7 @@ const Users = () => {
                           <TableRow key={user.id}>
                             <TableCell>{user.username}</TableCell>
                             <TableCell>{user.email}</TableCell>
-                            <TableCell>
-                              {user.role == 1 ? "Admin" : "User"}
-                            </TableCell>
+                            <TableCell>{user.role}</TableCell>
                             <TableCell>
                               <div className="handleButtonAction">
                                 <button

@@ -68,34 +68,52 @@ const addCart = (req, res) => {
     }
     if (data.length > 0) {
       const newQuantity = data[0].quantity + cart.quantity;
-      const updateSql = `UPDATE carts SET quantity = ? WHERE product_id = ? AND user_id = ?`;
       connection.query(
-        updateSql,
-        [parseInt(newQuantity), cart.product_id, cart.user_id],
-        (err, data) => {
+        `SELECT stock FROM products WHERE id = (?)`,
+        [cart.product_id],
+        (err, results) => {
           if (err) {
             console.error(err);
             return res.status(500).json({ message: "Lỗi máy chủ" });
           }
-          const getSql = `SELECT products.product_name,products.selling_price,carts.quantity,carts.image,carts.id,carts.product_id FROM carts INNER JOIN products on products.id = carts.product_id `;
-          connection.query(getSql, (err, data) => {
-            if (err) {
-              console.error(err);
-              return res.status(500).json({ message: "Lỗi máy chủ" });
-            }
-            const transformedData = data.map((item) => {
-              const productName = item.product_name
-                .replace(/_/g, " ")
-                .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
-              return {
-                ...item,
-                product_name: productName,
-              };
+          const productStock = results[0].stock;
+          if (newQuantity > productStock) {
+            return res.status(400).json({
+              message: "Cant add over stock quantity product",
             });
-            return res
-              .status(200)
-              .json({ message: "Add Cart Success", results: transformedData });
-          });
+          } else {
+            const updateSql = `UPDATE carts SET quantity = ? WHERE product_id = ? AND user_id = ?`;
+            connection.query(
+              updateSql,
+              [parseInt(newQuantity), cart.product_id, cart.user_id],
+              (err, data) => {
+                if (err) {
+                  console.error(err);
+                  return res.status(500).json({ message: "Lỗi máy chủ" });
+                }
+                const getSql = `SELECT products.product_name,products.selling_price,carts.quantity,carts.image,carts.id,carts.product_id FROM carts INNER JOIN products on products.id = carts.product_id `;
+                connection.query(getSql, (err, data) => {
+                  if (err) {
+                    console.error(err);
+                    return res.status(500).json({ message: "Lỗi máy chủ" });
+                  }
+                  const transformedData = data.map((item) => {
+                    const productName = item.product_name
+                      .replace(/_/g, " ")
+                      .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+                    return {
+                      ...item,
+                      product_name: productName,
+                    };
+                  });
+                  return res.status(200).json({
+                    message: "Add Cart Success",
+                    results: transformedData,
+                  });
+                });
+              }
+            );
+          }
         }
       );
     } else {
@@ -237,7 +255,7 @@ const checkOut = (req, res) => {
     paymentMethod
   ) {
     const fullAddress = `${address},${wards},${districts},${provinces}`;
-    if (paymentMethod === "cash") {
+    if (paymentMethod == "cash") {
       connection.query(
         `INSERT INTO orders (user_id,address,pay,phone_number,total,status) VALUES (?,?,?,?,?,?)`,
         [userId, fullAddress, paymentMethod, phoneNumber, total, "pending"],

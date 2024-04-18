@@ -78,6 +78,7 @@ const AdminHome = () => {
   const fetchUser = async (token) => {
     try {
       const res = await request.postRequest("users/verifyToken", { token });
+      // console.log(res);
       if (res.status === 200) {
         if (res.data.results.role === "user") {
           navigate("/");

@@ -126,6 +126,33 @@ const Validation = (value, type) => {
     if (!value.imported_price) {
       errors.imported_price = "Imported price cannot be empty";
     }
+  } else if (type === "informWithPassword") {
+    if (!value.currentPassword) {
+      errors.currentPassword = "Current password cannot be empty";
+    }
+    if (!value.newPassword) {
+      errors.newPassword = "New password cannot be empty";
+    }
+    if (value.newPassword !== value.confirmPassword) {
+      errors.confirmPassword = "Password must be the same";
+    }
+  } else if (type === "informWithoutPassword") {
+    if (!value.username) {
+      errors.username = "Username cannot be empty";
+    }
+    if (!value.name) {
+      errors.name = "Name cannot be empty";
+    }
+    if (!value.email) {
+      errors.email = "Email cannot be empty";
+    }
+    if (value.email) {
+      let regex =
+        /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+      if (!regex.test(value.email)) {
+        errors.email = "Email invalid";
+      }
+    }
   }
 
   return errors;

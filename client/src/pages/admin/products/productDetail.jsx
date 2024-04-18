@@ -27,8 +27,9 @@ const ProductDetail = () => {
       const res = await request.getRequest(`products/view/${id}`);
       if (res.status === 200) {
         const categories = res.data.results[0].category_names
-          .map((category) => category.name)
+          .map((category) => category.label)
           .join(",");
+        console.log(categories);
         setCategories(categories);
         setProduct(res.data.results[0]);
         const imgs = res.data.results[0].images.split(",");

@@ -1,82 +1,87 @@
 import * as React from "react";
-import { useTheme } from "@mui/material/styles";
-import { LineChart, axisClasses } from "@mui/x-charts";
-
 import Title from "../title/title";
-
-// Generate Sales Data
-function createData(time, amount) {
-  return { time, amount: amount ?? null };
-}
-
-const data = [
-  createData("00:00", 0),
-  createData("03:00", 300),
-  createData("06:00", 600),
-  createData("09:00", 800),
-  createData("12:00", 1500),
-  createData("15:00", 2000),
-  createData("18:00", 2400),
-  createData("21:00", 2400),
-  createData("24:00"),
-];
+import { useState } from "react";
+import { useEffect } from "react";
+import * as request from "../../../../utilities/request";
+import { Bar } from "react-chartjs-2";
+import "chart.js/auto";
 
 const Chart = () => {
-  const theme = useTheme();
+  const [data, setData] = useState({
+    labels: [],
+    data: [],
+  });
+  const [datas, setDatas] = useState(null);
 
+  const handleSelect = (e) => {
+    if (e.target.value == "year") {
+      const newArr = {
+        labels: datas.dataLast12Months.map(
+          (item) => item.month + " " + item.year
+        ),
+        data: datas.dataLast12Months.map((item) => item.total.total || 0),
+      };
+      setData(newArr);
+    } else {
+      const newArr = {
+        labels: datas.dataLast7Days.map((item) => item.date),
+        data: datas.dataLast7Days.map((item) => item.total.total || 0),
+      };
+      setData(newArr);
+    }
+  };
+  useEffect(() => {
+    const run = async () => {
+      const datas = await request.getRequest(`orders/chart`);
+      // console.log(datas.data.results);
+      setDatas(datas.data.results);
+    };
+    run();
+  }, []);
+  useEffect(() => {
+    const run = async () => {
+      if (datas) {
+        const newArr = {
+          labels: datas.dataLast7Days.map((item) => item.date),
+          data: datas.dataLast7Days.map((item) => item.total.total || 0),
+        };
+        setData(newArr);
+      }
+    };
+    run();
+  }, [datas]);
   return (
-    <React.Fragment>
-      <Title>Today</Title>
-      <div style={{ width: "100%", flexGrow: 1, overflow: "hidden" }}>
-        <LineChart
-          dataset={data}
-          margin={{
-            top: 16,
-            right: 20,
-            left: 70,
-            bottom: 30,
-          }}
-          xAxis={[
-            {
-              scaleType: "point",
-              dataKey: "time",
-              tickNumber: 2,
-              tickLabelStyle: theme.typography.body2,
-            },
-          ]}
-          yAxis={[
-            {
-              label: "Sales ($)",
-              labelStyle: {
-                ...theme.typography.body1,
-                fill: theme.palette.text.primary,
-              },
-              tickLabelStyle: theme.typography.body2,
-              max: 2500,
-              tickNumber: 3,
-            },
-          ]}
-          series={[
-            {
-              dataKey: "amount",
-              showMark: false,
-              color: theme.palette.primary.light,
-            },
-          ]}
-          sx={{
-            [`.${axisClasses.root} line`]: {
-              stroke: theme.palette.text.secondary,
-            },
-            [`.${axisClasses.root} text`]: {
-              fill: theme.palette.text.secondary,
-            },
-            [`& .${axisClasses.left} .${axisClasses.label}`]: {
-              transform: "translateX(-25px)",
-            },
-          }}
-        />
+    <div>
+      <div className="row chart_mid">
+        <div className="chart col-md-12">
+          <Title>Thống kê doanh thu</Title>
+          <select
+            id="chart"
+            className="form-control"
+            onChange={(e) => handleSelect(e)}
+            name="chart"
+            defaultValue={"week"}
+          >
+            <option value="week">Last 7 days</option>
+            <option value="year">Last 12 months</option>
+          </select>
+          <Bar
+            data={{
+              labels: data.labels,
+              datasets: [
+                {
+                  label: "Profit (đ)",
+                  data: data.data,
+                  borderRadius: 2,
+
+                  backgroundColor: "rgb(67, 93, 118)",
+                },
+              ],
+            }}
+          />
+        </div>
       </div>
-    </React.Fragment>
+    </div>
   );
 };
 export default Chart;

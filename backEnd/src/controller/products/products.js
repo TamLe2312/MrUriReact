@@ -1,4 +1,6 @@
 const connection = require("../../config/database");
+const path = require("path");
+const fs = require("fs");
 
 require("dotenv").config();
 
@@ -578,6 +580,201 @@ const editProduct = (req, res) => {
   }
 };
 
+const editImage = (req, res) => {
+  const { imageDelete, id } = req.body;
+  const files = req.files;
+  const uploadDir = path.join(__dirname, "../../../../client/public/uploads");
+  if (imageDelete && imageDelete.length > 0) {
+    if (Array.isArray(imageDelete) && imageDelete.length > 1) {
+      const deletedFilePaths = imageDelete.map((fileName) =>
+        path.join(uploadDir, fileName)
+      );
+      imageDelete.forEach((fileName) => {
+        connection.query(
+          "DELETE FROM `images` WHERE image_name = (?)",
+          [fileName],
+          async function (err, results, fields) {
+            if (err) {
+              return res.status(500).json({ error: "Lỗi máy chủ" });
+            }
+            deletedFilePaths.forEach((filePath) => {
+              fs.access(filePath, fs.constants.F_OK, (err) => {
+                if (err) {
+                  console.log(err);
+                  return res
+                    .status(404)
+                    .json({ error: "Tệp tin không tồn tại" });
+                }
+                fs.unlink(filePath, (error) => {
+                  if (error) {
+                    return res
+                      .status(500)
+                      .json({ error: "Lỗi khi xóa tệp tin" });
+                  }
+                });
+              });
+            });
+          }
+        );
+      });
+    } else {
+      const deletedFilePaths = path.join(uploadDir, imageDelete);
+      connection.query(
+        "DELETE FROM `images` WHERE image_name = (?)",
+        [imageDelete],
+        function (err, results, fields) {
+          if (err) {
+            console.log(err);
+            return res
+              .status(500)
+              .json({ error: "Có lỗi xảy ra xin thử lại sau" });
+          }
+          fs.access(deletedFilePaths, fs.constants.F_OK, (err) => {
+            if (err) {
+              console.log(err);
+              return res.status(404).json({ error: "Tệp tin không tồn tại" });
+            }
+            fs.unlink(deletedFilePaths, (error) => {
+              if (error) {
+                return res.status(500).json({ error: "Lỗi khi xóa tệp tin" });
+              }
+            });
+          });
+        }
+      );
+    }
+  }
+  if (files) {
+    let completed = 0;
+    files.forEach((file) => {
+      const fileName = file.filename;
+      connection.query(
+        "INSERT INTO images (image_name,product_id) VALUES (?,?)",
+        [fileName, id],
+        function (err, results, fields) {
+          completed++;
+          if (err) {
+            return res
+              .status(500)
+              .json({ error: "Có lỗi xảy ra xin thử lại sau" });
+          } else {
+            if (completed == files.length) {
+              return res
+                .status(200)
+                .json({ message: "Add image successfully" });
+            }
+          }
+        }
+      );
+    });
+  }
+};
+const deleteProduct = (req, res) => {
+  const { id } = req.body;
+  if (id) {
+    connection.query(
+      "SELECT image_name FROM images WHERE product_id = (?)",
+      [id],
+      function (err, data) {
+        if (err) {
+          return res
+            .status(500)
+            .json({ error: "Có lỗi xảy ra xin thử lại sau" });
+        }
+        if (data.length > 0) {
+          const uploadDir = path.join(
+            __dirname,
+            "../../../../client/public/uploads"
+          );
+          const deletedFilePaths = data.map((fileName) =>
+            path.join(uploadDir, fileName.image_name)
+          );
+          deletedFilePaths.forEach((filePath) => {
+            fs.access(filePath, fs.constants.F_OK, (err) => {
+              if (err) {
+                console.log(err);
+                return res.status(404).json({ error: "Tệp tin không tồn tại" });
+              }
+              fs.unlink(filePath, (error) => {
+                if (error) {
+                  return res.status(500).json({ error: "Lỗi khi xóa tệp tin" });
+                }
+              });
+            });
+          });
+          data.forEach((fileName) => {
+            connection.query(
+              "DELETE FROM `images` WHERE image_name = (?)",
+              [fileName.image_name],
+              async function (err, results, fields) {
+                if (err) {
+                  return res.status(500).json({ error: "Lỗi máy chủ" });
+                }
+              }
+            );
+          });
+          connection.query(
+            "DELETE FROM products WHERE id = (?)",
+            [id],
+            function (err, results, fields) {
+              if (err) {
+                return res
+                  .status(500)
+                  .json({ error: "Có lỗi xảy ra xin thử lại sau" });
+              }
+              return res.status(200).json({ message: "Delete success" });
+            }
+          );
+        }
+      }
+    );
+  }
+};
+const searchProducts = (req, res) => {
+  const search = req.params.value;
+  if (search) {
+    connection.query(
+      `SELECT products.id,
+        products.product_name,
+        products.selling_price,
+        products.status,
+        GROUP_CONCAT(images.image_name) AS images 
+      FROM products 
+      INNER JOIN images ON products.id = images.product_id 
+      WHERE products.product_name LIKE ?
+      GROUP BY products.id`,
+      [`%${search}%`],
+      function (err, data) {
+        if (err) {
+          console.log(err);
+          return res
+            .status(500)
+            .json({ error: "Có lỗi xảy ra xin thử lại sau" });
+        }
+        if (data.length > 0) {
+          const transformedData = data.map((item) => {
+            const productName = item.product_name
+              .replace(/_/g, " ")
+              .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+            return {
+              ...item,
+              product_name: productName,
+            };
+          });
+
+          return res
+            .status(200)
+            .json({ message: "Thành công", results: transformedData });
+        } else {
+          return res.status(400).json({ message: "Thất bại", results: [] });
+        }
+      }
+    );
+  } else {
+    return res.status(400).json({ message: "Không có search", results: [] });
+  }
+};
+
 module.exports = {
   getProducts,
   getProductById,
@@ -590,4 +787,7 @@ module.exports = {
   relatedProductsDetail,
   redirectCategory,
   editProduct,
+  editImage,
+  deleteProduct,
+  searchProducts,
 };

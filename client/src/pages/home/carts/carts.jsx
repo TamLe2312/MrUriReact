@@ -21,7 +21,7 @@ const Carts = () => {
     if (user) {
       setIsLoading(true);
       try {
-        const res = await request.getRequest(`carts/${user.id}`);
+        const res = await request.getRequest(`carts/cart/${user.id}`);
         if (res.status === 200) {
           // console.log(res);
           setCartItems(res.data.results);
@@ -77,6 +77,10 @@ const Carts = () => {
           cart: cart,
         },
       });
+      // console.log(cart);
+      const index = cartItems.findIndex((item) => item.id === cart.id);
+      // console.log(cartItems);
+      cartItems.splice(index, 1);
     }
   };
 
@@ -117,11 +121,6 @@ const Carts = () => {
       setTotal(0);
     }
   }, [cartItems]);
-  useEffect(() => {
-    if (user) {
-      fetchCarts(user);
-    }
-  }, [user, carts]);
 
   return (
     <>

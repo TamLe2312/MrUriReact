@@ -185,7 +185,7 @@ const Checkout = () => {
     if (user) {
       setIsLoading(true);
       try {
-        const res = await request.getRequest(`carts/${user.id}`);
+        const res = await request.getRequest(`carts/cart/${user.id}`);
         if (res.status === 200) {
           //   console.log(res);
           setCartItems(res.data.results);

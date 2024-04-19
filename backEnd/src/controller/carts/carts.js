@@ -3,7 +3,9 @@ let config = require("../../config/vnpay");
 let querystring = require("qs");
 let crypto = require("crypto");
 const moment = require("moment");
-const { url } = require("inspector");
+const fs = require("fs");
+const Mustache = require("mustache");
+const mailer = require("../../utils/mailer");
 
 const getCarts = (req, res) => {
   const sql =
@@ -426,6 +428,54 @@ const vnpayReturn = (req, res) => {
           console.log(err);
           return res.status(500).json({ message: "Lỗi máy chủ" });
         }
+        connection.query(
+          `SELECT users.email, orders.total, orders.address, order_details.price, order_details.quantity, products.product_name
+          FROM orders 
+          INNER JOIN users ON orders.user_id = users.id 
+          INNER JOIN order_details ON orders.id = order_details.order_id 
+          INNER JOIN products ON order_details.product_id = products.id 
+          WHERE orders.id = ?`,
+          [orderId],
+          (err, results, fields) => {
+            if (err) {
+              return res.status(500).json({ message: "Lỗi máy chủ" });
+            }
+            const orderDetails = {
+              email: results[0].email,
+              total: results[0].total,
+              address: results[0].address,
+              orderItems: [],
+            };
+
+            results.forEach((row) => {
+              const productName = row.product_name
+                .replace(/_/g, " ")
+                .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+              const orderItem = {
+                price: row.price,
+                quantity: row.quantity,
+                productName: productName,
+              };
+              orderDetails.orderItems.push(orderItem);
+            });
+            const filePath = "../backEnd/src/public/html/OrderInformation.html";
+            fs.readFile(filePath, "utf8", (err, content) => {
+              if (err) {
+                console.error(`Đã xảy ra lỗi khi đọc file: ${err}`);
+                return;
+              }
+              let data = {
+                email: orderDetails.email,
+                total: orderDetails.total,
+                address: orderDetails.address,
+                orderDetails: orderDetails.orderItems,
+              };
+              console.log(data);
+              let htmlContent = Mustache.render(content, data);
+              mailer.sendMail(data.email, "Order Information", htmlContent);
+            });
+          }
+        );
         return res.status(200).json({ message: "Thành công" });
       }
     );

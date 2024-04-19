@@ -10,6 +10,7 @@ function CartProvider({ children }) {
     carts: [],
   };
   const { user } = useContext(UserContext);
+
   const addCart = async (cart) => {
     try {
       const res = await request.postRequest("carts/add", {
@@ -47,6 +48,7 @@ function CartProvider({ children }) {
       console.error(err);
     }
   };
+
   const cartReducer = (state, action) => {
     // console.log("state.carts", state.carts);
     // console.log("action", action);
@@ -88,7 +90,7 @@ function CartProvider({ children }) {
 
   const fetchData = async (id) => {
     try {
-      const res = await request.getRequest(`carts/${id}`);
+      const res = await request.getRequest(`carts/cart/${id}`);
       dispatch({ type: "SET_CART", payload: [...res.data.results] });
     } catch (err) {
       console.error(err);

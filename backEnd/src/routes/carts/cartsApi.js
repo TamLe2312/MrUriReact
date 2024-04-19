@@ -14,7 +14,7 @@ const {
 const Router = express.Router();
 
 Router.get("/", getCarts);
-Router.get("/:id", getCartById);
+Router.get("/cart/:id", getCartById);
 Router.post("/changeQuantity", changeQuantity);
 Router.post("/add", addCart);
 Router.post("/check-out", upload.none(), checkOut);

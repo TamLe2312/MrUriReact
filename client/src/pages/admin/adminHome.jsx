@@ -22,6 +22,8 @@ import {
 import { Outlet, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import * as request from "../../utilities/request";
+import { useContext } from "react";
+import { SocketContext } from "../../context/socketContext";
 
 const drawerWidth = 240;
 
@@ -73,8 +75,11 @@ const Drawer = styled(MuiDrawer, {
 const defaultTheme = createTheme();
 
 const AdminHome = () => {
+  // const { onlineUser } = useContext(SocketContext);
+  // if (onlineUser) {
+  //   console.log(onlineUser);
+  // }
   const navigate = useNavigate();
-
   const fetchUser = async (token) => {
     try {
       const res = await request.postRequest("users/verifyToken", { token });

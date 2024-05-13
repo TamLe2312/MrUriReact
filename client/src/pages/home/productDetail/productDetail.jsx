@@ -196,11 +196,6 @@ const ProductDetail = () => {
                       : "Không có"}
                     đ
                   </h5>
-                  <p className="mb-4">
-                    {product && product.product_description
-                      ? product.product_description
-                      : "Không có"}
-                  </p>
                   <div className="input-quantity-container">
                     <div className="input-group-btn">
                       <button
@@ -347,7 +342,7 @@ const ProductDetail = () => {
               </div>
             </div>
           </div>
-          <h1 className="fw-bold mb-0">Related products</h1>
+          {/* <h1 className="fw-bold mb-0">Related products</h1> */}
           {/* <div className="vesitable">
             <div className="owl-carousel vegetable-carousel justify-content-center">
               <div className="border border-primary rounded position-relative vesitable-item">

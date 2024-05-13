@@ -1,7 +1,6 @@
 import { Link, useParams, useNavigate } from "react-router-dom";
 import "./shop.css";
 import * as request from "../../../utilities/request";
-import ImageTest from "../../../../public/images/fruite-item-5.jpg";
 import SearchIcon from "@mui/icons-material/Search";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import { useContext, useEffect, useState } from "react";
@@ -209,7 +208,7 @@ const Shop = () => {
                         relatedProducts.map((product) => {
                           return (
                             <div
-                              className="d-flex align-items-center justify-content-start"
+                              className="d-flex align-items-center justify-content-start productItem"
                               key={product.id}
                             >
                               <Link to={`/product/${product.id}`}>

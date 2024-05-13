@@ -52,30 +52,26 @@
   display: flex;
   align-items: center;
 }
-.productsContainer .container {
-  margin: 0;
-  padding: 0;
-}
 
-.productsContainer .productItem {
+.productItem {
   height: 450px;
   padding: 0;
   width: 260px;
   margin: 12px;
 }
-.productsContainer .productItem .product-img {
+.productItem .product-img {
   width: 100%;
   max-width: 300px;
   height: 200px;
 }
-.productsContainer .productItem .product-img img {
+.productItem .product-img img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
-.productsContainer .productItem .productInform h5 {
+.productItem .productInform h5 {
   margin: 0;
 }
-.productsContainer .productItem .productInform p {
+.productItem .productInform p {
   margin: 0;
 }

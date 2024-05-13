@@ -589,31 +589,27 @@ const editImage = (req, res) => {
       const deletedFilePaths = imageDelete.map((fileName) =>
         path.join(uploadDir, fileName)
       );
+      Promise.all(
+        deletedFilePaths.map((filePath) => {
+          return new Promise((resolve, reject) => {
+            fs.unlink(filePath, (err) => {
+              if (err) {
+                reject(err);
+              } else {
+                resolve();
+              }
+            });
+          });
+        })
+      );
       imageDelete.forEach((fileName) => {
         connection.query(
           "DELETE FROM `images` WHERE image_name = (?)",
           [fileName],
-          async function (err, results, fields) {
+          function (err, results, fields) {
             if (err) {
               return res.status(500).json({ error: "Lỗi máy chủ" });
             }
-            deletedFilePaths.forEach((filePath) => {
-              fs.access(filePath, fs.constants.F_OK, (err) => {
-                if (err) {
-                  console.log(err);
-                  return res
-                    .status(404)
-                    .json({ error: "Tệp tin không tồn tại" });
-                }
-                fs.unlink(filePath, (error) => {
-                  if (error) {
-                    return res
-                      .status(500)
-                      .json({ error: "Lỗi khi xóa tệp tin" });
-                  }
-                });
-              });
-            });
           }
         );
       });

@@ -49,6 +49,7 @@ const EditProduct = () => {
         fetchCategories(res.data.results[0].category_names);
         setProduct(res.data.results[0]);
         const imgs = res.data.results[0].images.split(",");
+        // console.log(imgs);
         setImages(imgs);
       }
     } catch (err) {

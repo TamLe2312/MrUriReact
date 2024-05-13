@@ -12,13 +12,16 @@ import { UserContext } from "../../context/userProvider";
 import { APP_URL } from "../../config/env";
 import { toast } from "sonner";
 import { CartContext } from "../../context/cartProvider";
+import { SocketContext } from "../../context/socketContext";
 
 const Homepage = () => {
   const [products, setProducts] = useState();
+  const { socket } = useContext(SocketContext);
   const [isLoading, setIsLoading] = useState(true);
   const { user, handleSet } = useContext(UserContext);
   const navigate = useNavigate();
   const { carts, dispatch } = useContext(CartContext);
+  let a = 0;
 
   const handleAddCart = async (product) => {
     if (user) {
@@ -68,6 +71,18 @@ const Homepage = () => {
       console.error(err);
     }
   };
+  useEffect(() => {
+    if (socket) {
+      socket.on("update_products", (products) => {
+        const productsArray = products.map((product) => ({
+          ...product,
+          images: product.images.split(","),
+        }));
+        setProducts(productsArray);
+      });
+    }
+  }, [socket]);
+
   useEffect(() => {
     fetchProducts();
     const token = localStorage.getItem("token");

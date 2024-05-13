@@ -1,4 +1,3 @@
-const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const usersApi = require("./routes/users/usersApi");
@@ -8,7 +7,8 @@ const productsApi = require("./routes/products/productsApi");
 const ordersApi = require("./routes/orders/ordersApi");
 const web = require("./routes/web");
 
-const app = express();
+const { app, server } = require("./socket/socket");
+
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
@@ -22,6 +22,6 @@ app.use("/carts", cartsApi);
 app.use("/products", productsApi);
 app.use("/orders", ordersApi);
 
-app.listen(port, () => {
-  console.log("Listening");
+server.listen(port, () => {
+  console.log(`Server Running on port ${port}`);
 });

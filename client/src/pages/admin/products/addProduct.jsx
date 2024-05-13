@@ -11,10 +11,12 @@ import "./products.css";
 import Validation from "../../../components/validation/validation";
 import * as request from "../../../utilities/request";
 import Select from "react-select";
+import { SocketContext } from "../../../context/socketContext";
 
 const AddProduct = () => {
   const { editedProduct, isEdit, setEditedProduct, setIsEdit } =
     useContext(EditProductContext);
+  const { socket } = useContext(SocketContext);
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -121,7 +123,7 @@ const AddProduct = () => {
           `http://localhost:3001/products/${formData.id}`,
           formData
         );
-        console.log(res);
+        // console.log(res);
         setIsEdit(false);
         setEditedProduct();
         toast.success("Edit Success");
@@ -132,6 +134,7 @@ const AddProduct = () => {
     } else {
       const isValid = validate();
       // console.log(options);
+      await socket.emit("add_product");
       if (isValid) {
         try {
           const formDatas = new FormData();

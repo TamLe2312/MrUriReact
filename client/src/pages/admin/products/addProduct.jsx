@@ -134,7 +134,6 @@ const AddProduct = () => {
     } else {
       const isValid = validate();
       // console.log(options);
-      await socket.emit("add_product");
       if (isValid) {
         try {
           const formDatas = new FormData();
@@ -154,6 +153,7 @@ const AddProduct = () => {
           const response = await request.postRequest(`products/add`, formDatas);
           if (response.status === 200) {
             toast.success(response.data.message);
+            await socket.emit("add_product");
             navigate("/dashboard/products");
           }
         } catch (error) {

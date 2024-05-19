@@ -5,10 +5,9 @@
 /*** Hero Header ***/
 .hero-header {
   background: linear-gradient(
-      rgba(248, 223, 173, 0.1),
-      rgba(248, 223, 173, 0.1)
-    ),
-    url(../../../public//images/hero-img.jpg);
+    rgba(248, 223, 173, 0.1),
+    rgba(248, 223, 173, 0.1)
+  );
   background-position: center center;
   background-repeat: no-repeat;
   background-size: cover;
@@ -49,8 +48,7 @@
 
 .page-header {
   position: relative;
-  background: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)),
-    url(../img/cart-page-header-img.jpg);
+  background: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3));
   background-position: center center;
   background-repeat: no-repeat;
   background-size: cover;
@@ -111,7 +109,8 @@
 }
 
 .productsContainer .productItem {
-  height: 450px;
+  max-height: 450px;
+  height: 100%;
   padding: 0;
   width: 260px;
   margin: 12px;

@@ -9,6 +9,7 @@ import InventoryIcon from "@mui/icons-material/Inventory";
 import PeopleIcon from "@mui/icons-material/People";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import LayersIcon from "@mui/icons-material/Layers";
+import ViewCarouselIcon from "@mui/icons-material/ViewCarousel";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 
 export const mainListItems = (
@@ -36,6 +37,12 @@ export const mainListItems = (
         <BarChartIcon />
       </ListItemIcon>
       <ListItemText primary="Categories" />
+    </ListItemButton>
+    <ListItemButton component={Link} to="/dashboard/sliders">
+      <ListItemIcon>
+        <ViewCarouselIcon />
+      </ListItemIcon>
+      <ListItemText primary="Sliders" />
     </ListItemButton>
     <ListItemButton component={Link} to="/dashboard/orders">
       <ListItemIcon>

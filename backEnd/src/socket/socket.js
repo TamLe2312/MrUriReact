@@ -26,7 +26,39 @@ io.on("connection", (socket) => {
       const products = await fetchProducts();
       io.emit("update_products", products);
     } catch (error) {
-      console.error("Error fetching products:", error);
+      console.error(error);
+    }
+  });
+  socket.on("delete_product", async (id) => {
+    try {
+      const products = await fetchProducts();
+      io.emit("update_products", products);
+    } catch (error) {
+      console.error(error);
+    }
+  });
+  socket.on("add_slider", async () => {
+    try {
+      const sliders = await fetchSliders();
+      io.emit("update_slider", sliders);
+    } catch (error) {
+      console.error(error);
+    }
+  });
+  socket.on("edit_slider", async () => {
+    try {
+      const sliders = await fetchSliders();
+      io.emit("update_slider", sliders);
+    } catch (error) {
+      console.error(error);
+    }
+  });
+  socket.on("delete_slider", async (id) => {
+    try {
+      const sliders = await fetchSliders();
+      io.emit("update_slider", sliders);
+    } catch (error) {
+      console.error(error);
     }
   });
   socket.on("disconnect", () => {
@@ -63,7 +95,35 @@ const fetchProducts = () => {
         });
         resolve(transformedData);
       } else {
-        reject("No products found");
+        resolve([]);
+      }
+    });
+  });
+};
+const fetchSliders = () => {
+  return new Promise((resolve, reject) => {
+    const sql = `SELECT sliders.*, categories.category_slug 
+  FROM sliders 
+  INNER JOIN categories 
+  ON categories.id = sliders.path`;
+    connection.query(sql, (err, data) => {
+      if (err) {
+        console.error(err);
+        reject(err);
+      }
+      if (data.length > 0) {
+        const transformedData = data.map((item) => {
+          const altValid = item.alt
+            .replace(/_/g, " ")
+            .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+          return {
+            ...item,
+            alt: altValid,
+          };
+        });
+        resolve(transformedData);
+      } else {
+        resolve([]);
       }
     });
   });

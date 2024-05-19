@@ -11,14 +11,16 @@ import {
   TableRow,
 } from "@mui/material";
 import "./products.css";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import ProductAdminSkeleton from "../../../components/skeleton/productAdminSkeleton/productAdminSkeleton";
 import * as request from "../../../utilities/request";
+import { SocketContext } from "../../../context/socketContext";
 
 const Products = () => {
+  const { socket } = useContext(SocketContext);
   const [products, setProducts] = useState();
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -54,6 +56,8 @@ const Products = () => {
       });
       if (res.status === 200) {
         toast.success(res.data.message);
+        console.log("OK");
+        await socket.emit("delete_product", id);
         fetchProducts();
       }
     } catch (err) {

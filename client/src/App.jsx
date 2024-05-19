@@ -29,6 +29,7 @@ const LazyEditProduct = lazy(() =>
   import("./pages/admin/products/editProduct")
 );
 const LazyOrders = lazy(() => import("./pages/admin/orders/orders"));
+const LazySliders = lazy(() => import("./pages/admin/sliders/sliders"));
 const LazyCarts = lazy(() => import("./pages/home/carts/carts"));
 const LazyShopPage = lazy(() => import("./pages/home/shop/shop"));
 const LazyCheckout = lazy(() => import("./pages/home/checkout/checkout"));
@@ -207,6 +208,14 @@ function App() {
             element={
               <Suspense fallback={<Loading />}>
                 <LazyOrders />
+              </Suspense>
+            }
+          />
+          <Route
+            path="sliders"
+            element={
+              <Suspense fallback={<Loading />}>
+                <LazySliders />
               </Suspense>
             }
           />

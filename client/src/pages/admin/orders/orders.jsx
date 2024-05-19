@@ -16,11 +16,15 @@ import { useEffect, useState } from "react";
 import OrderAdminSkeleton from "../../../components/skeleton/orderAdminSkeleton/orderAdminSkeleton";
 import * as request from "../../../utilities/request";
 import { toast } from "sonner";
+import MyModal from "../../../components/modal/modal";
+import OrderViewDetail from "./orderViewDetail";
 
 const Orders = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [orders, setOrders] = useState();
+  const [modalView, setModalView] = useState(false);
+  const [rowId, setRowId] = useState(null);
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
 
@@ -31,6 +35,11 @@ const Orders = () => {
   const handleChangeRowsPerPage = (event) => {
     setRowsPerPage(+event.target.value);
     setPage(0);
+  };
+
+  const handleView = (orderId) => {
+    setModalView(!modalView);
+    setRowId(orderId);
   };
 
   const handleChange = async (e, order) => {
@@ -182,9 +191,22 @@ const Orders = () => {
                                   Delete
                                 </button>
                                 &nbsp;
-                                <button className="btn btn-success">
+                                <button
+                                  className="btn btn-success"
+                                  onClick={() => handleView(order.id)}
+                                >
                                   View
                                 </button>
+                                {rowId === order.id && (
+                                  <MyModal
+                                    text={"View Order Detail"}
+                                    show={modalView}
+                                    onHide={() => setModalView(false)}
+                                    childrens={
+                                      <OrderViewDetail id={order.id} />
+                                    }
+                                  />
+                                )}
                               </div>
                             </TableCell>
                           </TableRow>

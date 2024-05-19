@@ -31,8 +31,6 @@ const viewProducts = (req, res) => {
       return res
         .status(200)
         .json({ message: "Thành công", results: transformedData });
-    } else {
-      return res.status(400).json({ message: "Sản phẩm không tồn tại" });
     }
   });
 };

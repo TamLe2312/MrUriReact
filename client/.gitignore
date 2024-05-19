@@ -9,7 +9,7 @@ lerna-debug.log*
 
 node_modules
 .env
-public
+public/uploads
 dist
 dist-ssr
 *.local

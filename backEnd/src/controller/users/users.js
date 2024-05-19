@@ -1,6 +1,7 @@
 const connection = require("../../config/database");
 const bcrypt = require("bcrypt");
 const saltRounds = 10;
+const path = require("path");
 const fs = require("fs");
 const Mustache = require("mustache");
 const jwt = require("jsonwebtoken");
@@ -398,6 +399,221 @@ const editPassword = (req, res) => {
     );
   }
 };
+const getSlide = (req, res) => {
+  const sql = `
+  SELECT sliders.*, categories.category_slug 
+  FROM sliders 
+  INNER JOIN categories 
+  ON categories.id = sliders.path
+`;
+  connection.query(sql, (err, data) => {
+    if (err) {
+      console.log(err);
+      return res.status(500).json({ message: "Lỗi máy chủ" });
+    }
+    if (data.length > 0) {
+      const transformedData = data.map((item) => {
+        const altValid = item.alt
+          .replace(/_/g, " ")
+          .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+        return {
+          ...item,
+          alt: altValid,
+        };
+      });
+      return res
+        .status(200)
+        .json({ message: "Thành công", results: transformedData });
+    }
+  });
+};
+const getSlideById = (req, res) => {
+  const id = req.params.id;
+  if (id) {
+    connection.query(
+      `SELECT sliders.*, categories.category_slug FROM sliders INNER JOIN categories ON categories.id = sliders.path WHERE sliders.id = (?)`,
+      [id],
+      (err, data) => {
+        if (err) {
+          console.log(err);
+          return res.status(500).json({ message: "Lỗi máy chủ" });
+        }
+        if (data.length > 0) {
+          const transformedData = data.map((item) => {
+            const altValid = item.alt
+              .replace(/_/g, " ")
+              .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+            return {
+              ...item,
+              alt: altValid,
+            };
+          });
+          return res
+            .status(200)
+            .json({ message: "Thành công", results: transformedData });
+        }
+      }
+    );
+  }
+};
+const addSlide = (req, res) => {
+  const { alt, pathCat } = req.body;
+  const file = req.file;
+  if (alt && pathCat && file) {
+    const altValid = alt.toLowerCase().replace(/\s+/g, "_");
+    const fileName = file.filename;
+    // console.log(fileName, altValid, path);
+    connection.query(
+      "INSERT INTO sliders (img,alt,path) VALUES (?,?,?)",
+      [fileName, altValid, pathCat],
+      function (err, result, fields) {
+        if (err) {
+          console.error(err);
+          return res.status(500).json({ error: "Lỗi máy chủ" });
+        }
+        return res.status(200).json({ message: "Add success" });
+      }
+    );
+  }
+};
+const editSlide = (req, res) => {
+  const { id, alt, pathCat, urlImg } = req.body;
+  if (id && alt && pathCat) {
+    if (urlImg) {
+      const altValid = alt.toLowerCase().replace(/\s+/g, "_");
+      connection.query(
+        "SELECT * FROM sliders WHERE alt = (?)",
+        [altValid],
+        function (err, data) {
+          if (err) {
+            console.error(err);
+            return res.status(500).json({ error: "Lỗi máy chủ" });
+          }
+          if (data.length > 0) {
+            return res.status(400).json({ message: "Alt was taken" });
+          } else {
+            connection.query(
+              "UPDATE sliders SET alt = (?),img = (?),path=(?) WHERE id = (?)",
+              [altValid, urlImg, pathCat, id],
+              function (err, result, fields) {
+                if (err) {
+                  console.error(err);
+                  return res.status(500).json({ error: "Lỗi máy chủ" });
+                }
+                return res.status(200).json({ message: "Update success" });
+              }
+            );
+          }
+        }
+      );
+    } else {
+      const altValid = alt.toLowerCase().replace(/\s+/g, "_");
+      connection.query(
+        "SELECT * FROM sliders WHERE alt = ?",
+        [altValid],
+        function (err, data) {
+          if (err) {
+            console.error(err);
+            return res.status(500).json({ error: "Lỗi máy chủ" });
+          }
+          if (data.length > 0) {
+            return res.status(400).json({ message: "Alt was taken" });
+          } else {
+            connection.query(
+              "SELECT img FROM sliders WHERE id = ?",
+              [id],
+              function (err, dataImg) {
+                if (err) {
+                  console.error(err);
+                  return res.status(500).json({ error: "Lỗi máy chủ" });
+                }
+                const file = req.file.filename;
+                const uploadDir = path.join(
+                  __dirname,
+                  "../../../../client/public/uploads"
+                );
+                const imgDelete = path.join(uploadDir, dataImg[0].img);
+
+                connection.query(
+                  "UPDATE sliders SET alt = ?, img = ?, path = ? WHERE id = ?",
+                  [altValid, file, pathCat, id],
+                  function (err, result, fields) {
+                    if (err) {
+                      console.error(err);
+                      return res.status(500).json({ error: "Lỗi máy chủ" });
+                    }
+                    fs.access(imgDelete, fs.constants.F_OK, (err) => {
+                      if (err) {
+                        return res
+                          .status(404)
+                          .json({ error: "Tệp tin không tồn tại" });
+                      }
+                      fs.unlink(imgDelete, (error) => {
+                        if (error) {
+                          return res
+                            .status(500)
+                            .json({ error: "Lỗi khi xóa tệp tin" });
+                        }
+                        return res
+                          .status(200)
+                          .json({ message: "Update success" });
+                      });
+                    });
+                  }
+                );
+              }
+            );
+          }
+        }
+      );
+    }
+  }
+};
+const deleteSlide = (req, res) => {
+  const id = req.params.id;
+  if (id) {
+    connection.query(
+      `SELECT img FROM sliders WHERE id = (?)`,
+      [id],
+      (err, data) => {
+        if (err) {
+          console.log(err);
+          return res.status(500).json({ message: "Lỗi máy chủ" });
+        }
+        if (data.length > 0) {
+          const sql = "DELETE FROM sliders WHERE id = (?)";
+          connection.query(sql, [id], (err, results, field) => {
+            if (err) {
+              return res.status(500).json({ message: "Lỗi máy chủ" });
+            }
+            if (results) {
+              const uploadDir = path.join(
+                __dirname,
+                "../../../../client/public/uploads"
+              );
+              const filePath = path.join(uploadDir, data[0].img);
+              fs.access(filePath, fs.constants.F_OK, (err) => {
+                if (err) {
+                  return res
+                    .status(404)
+                    .json({ error: "Tệp tin không tồn tại" });
+                }
+                fs.unlink(filePath, (error) => {
+                  if (error) {
+                    return res
+                      .status(500)
+                      .json({ error: "Lỗi khi xóa tệp tin" });
+                  }
+                  return res.status(200).json({ message: "Delete Success" });
+                });
+              });
+            }
+          });
+        }
+      }
+    );
+  }
+};
 
 module.exports = {
   verifyToken,
@@ -412,4 +628,9 @@ module.exports = {
   addUser,
   editProfile,
   editPassword,
+  getSlide,
+  getSlideById,
+  addSlide,
+  editSlide,
+  deleteSlide,
 };

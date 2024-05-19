@@ -1,6 +1,5 @@
 const express = require("express");
 const multer = require("multer");
-const upload = multer();
 const {
   getUsers,
   signIn,
@@ -14,11 +13,33 @@ const {
   editUser,
   editProfile,
   editPassword,
+  getSlide,
+  addSlide,
+  deleteSlide,
+  getSlideById,
+  editSlide,
 } = require("../../controller/users/users");
 const Router = express.Router();
 
+//Upload Files
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "../client/public/uploads/");
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + "-" + file.originalname);
+  },
+});
+
+const upload = multer({ storage: storage });
+
 Router.get("/", getUsers);
 Router.get("/user/:id", getUserById);
+Router.get("/slider", getSlide);
+Router.get("/getSlide/:id", getSlideById);
+Router.post("/edit/slide", upload.single("image"), editSlide);
+Router.delete("/deleteSlide/:id", deleteSlide);
+Router.post("/addSlide", upload.single("image"), addSlide);
 Router.post("/verifyToken", verifyToken);
 Router.post("/add", addUser);
 Router.post("/profile", editProfile);

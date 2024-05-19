@@ -3,18 +3,21 @@ import EditProductProvider from "./editProductProvider";
 import CartProvider from "./cartProvider";
 import UserProvider from "./userProvider";
 import SocketContextProvider from "./socketContext";
+import SliderProvider from "./sliderContext";
 export const Contexts = createContext();
 
 function AllContext({ children }) {
   return (
     <Contexts.Provider value={null}>
-      <UserProvider>
-        <SocketContextProvider>
-          <CartProvider>
-            <EditProductProvider>{children}</EditProductProvider>
-          </CartProvider>
-        </SocketContextProvider>
-      </UserProvider>
+      <SliderProvider>
+        <UserProvider>
+          <SocketContextProvider>
+            <CartProvider>
+              <EditProductProvider>{children}</EditProductProvider>
+            </CartProvider>
+          </SocketContextProvider>
+        </UserProvider>
+      </SliderProvider>
     </Contexts.Provider>
   );
 }

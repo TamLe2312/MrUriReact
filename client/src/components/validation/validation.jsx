@@ -153,6 +153,13 @@ const Validation = (value, type) => {
         errors.email = "Email invalid";
       }
     }
+  } else if (type === "slider") {
+    if (!value.alt) {
+      errors.alt = "Alt cannot be empty";
+    }
+    if (!value.path) {
+      errors.path = "Path cannot be empty";
+    }
   }
 
   return errors;

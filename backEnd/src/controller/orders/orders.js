@@ -47,6 +47,86 @@ const getOrders = (req, res) => {
   }
 };
 
+const getOrderById = (req, res) => {
+  const { id, userId } = req.body;
+  if (id && userId) {
+    connection.query(
+      `SELECT orders.id,
+              users.username,
+              orders.address,
+              orders.pay,
+              orders.phone_number,
+              orders.total,
+              orders.status,
+              orders.created_at,
+              GROUP_CONCAT(
+                JSON_OBJECT(
+                  'quantity', order_details.quantity,
+                  'price', order_details.price,
+                  'img', order_details.img,
+                  'product_name', products.product_name
+                )
+              ) AS order_details
+       FROM orders
+       INNER JOIN order_details ON order_details.order_id = orders.id
+       INNER JOIN users ON users.id = orders.user_id
+       INNER JOIN products ON products.id = order_details.product_id
+       WHERE orders.user_id = ? AND orders.id = ?
+       GROUP BY orders.id
+      `,
+      [userId, id],
+      (err, data) => {
+        if (err) {
+          console.log(err);
+          return res.status(500).json({ message: "Lỗi máy chủ" });
+        }
+        if (data.length > 0) {
+          const transformedData = data.map((item) => {
+            const pay = item.pay
+              .replace(/_/g, " ")
+              .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+            const status = item.status
+              .replace(/_/g, " ")
+              .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+
+            const createdAt = new Date(item.created_at).toLocaleDateString(
+              "vi-VN",
+              {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+              }
+            );
+
+            const orderDetails = JSON.parse(`[${item.order_details}]`).map(
+              (detail) => {
+                return {
+                  ...detail,
+                  product_name: detail.product_name
+                    .replace(/_/g, " ")
+                    .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase()),
+                };
+              }
+            );
+
+            return {
+              ...item,
+              pay: pay,
+              created_at: createdAt,
+              status: status,
+              order_details: orderDetails,
+            };
+          });
+
+          return res
+            .status(200)
+            .json({ message: "Thành công", results: transformedData });
+        }
+      }
+    );
+  }
+};
+
 const editOrder = (req, res) => {
   const id = req.params.id;
   const { address } = req.body;
@@ -252,4 +332,5 @@ module.exports = {
   getAll,
   editStatus,
   getChart,
+  getOrderById,
 };

@@ -202,6 +202,7 @@ const Orders = () => {
                                     text={"View Order Detail"}
                                     show={modalView}
                                     onHide={() => setModalView(false)}
+                                    size={"xl"}
                                     childrens={
                                       <OrderViewDetail id={order.id} />
                                     }

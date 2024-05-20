@@ -10,10 +10,12 @@ const {
   getAll,
   editStatus,
   getChart,
+  getOrderById,
 } = require("../../controller/orders/orders");
 const Router = express.Router();
 
 Router.get("/user/:id", getOrders);
+Router.post("/getOrderById", getOrderById);
 Router.get("/getAll", getAll);
 Router.get("/chart", getChart);
 Router.post("/edit/:id", editOrder);

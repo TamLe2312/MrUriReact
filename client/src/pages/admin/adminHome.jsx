@@ -24,6 +24,7 @@ import { useEffect } from "react";
 import * as request from "../../utilities/request";
 import { useContext } from "react";
 import { SocketContext } from "../../context/socketContext";
+import { UserContext } from "../../context/userProvider";
 
 const drawerWidth = 240;
 
@@ -79,12 +80,14 @@ const AdminHome = () => {
   // if (onlineUser) {
   //   console.log(onlineUser);
   // }
+  const { setUser } = useContext(UserContext);
   const navigate = useNavigate();
   const fetchUser = async (token) => {
     try {
       const res = await request.postRequest("users/verifyToken", { token });
       // console.log(res);
       if (res.status === 200) {
+        setUser(res.data.results);
         if (res.data.results.role === "user") {
           navigate("/");
         }
@@ -104,7 +107,7 @@ const AdminHome = () => {
     } else {
       navigate("/");
     }
-  });
+  }, []);
 
   const [open, setOpen] = React.useState(true);
   const toggleDrawer = () => {

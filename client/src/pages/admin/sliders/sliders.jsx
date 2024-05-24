@@ -149,7 +149,7 @@ const Sliders = () => {
           image.image
             ? formDatas.append("image", image.image)
             : formDatas.append("urlImg", image.urlImg);
-          const res = await request.postRequest("users//edit/slide", formDatas);
+          const res = await request.postRequest("users/edit/slide", formDatas);
           if (res.data.message) {
             toast.success(res.data.message);
             setFormData({
@@ -157,8 +157,8 @@ const Sliders = () => {
               path: "",
             });
             setImage();
-            await socket.emit("edit_slider");
             fetchSliders();
+            await socket.emit("edit_slider");
           }
         } catch (err) {
           console.error(err);
@@ -178,18 +178,20 @@ const Sliders = () => {
           formDatas.append("pathCat", formData.path);
           formDatas.append("image", image.image);
           const res = await request.postRequest("users/addSlide", formDatas);
-          if (res.data.message) {
+          if (res.status === 200) {
             toast.success(res.data.message);
             setFormData({
               alt: "",
               path: "",
             });
             setImage();
-            await socket.emit("add_slider");
             fetchSliders();
+            await socket.emit("add_slider");
           }
         } catch (err) {
           console.error(err);
+        } finally {
+          setIsLoading(false);
         }
       }
     }
@@ -197,7 +199,8 @@ const Sliders = () => {
   const fetchSliders = async () => {
     try {
       const res = await request.getRequest(`users/slider`);
-      if (res.data) {
+      console.log(res);
+      if (res.status === 200) {
         setSliders(res.data.results);
         setIsLoading(false);
       }
@@ -350,7 +353,7 @@ const Sliders = () => {
                           <TableRow key={slider.id}>
                             <TableCell>{slider.id}</TableCell>
                             <TableCell>{slider.alt}</TableCell>
-                            <TableCell>{slider.path}</TableCell>
+                            <TableCell>{slider.category_name}</TableCell>
                             <TableCell>
                               <div className="handleButtonAction">
                                 <button

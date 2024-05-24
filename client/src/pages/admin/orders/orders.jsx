@@ -11,7 +11,6 @@ import {
   TablePagination,
   TableRow,
 } from "@mui/material";
-import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import OrderAdminSkeleton from "../../../components/skeleton/orderAdminSkeleton/orderAdminSkeleton";
 import * as request from "../../../utilities/request";
@@ -25,7 +24,6 @@ const Orders = () => {
   const [orders, setOrders] = useState();
   const [modalView, setModalView] = useState(false);
   const [rowId, setRowId] = useState(null);
-  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
 
   const handleChangePage = (event, newPage) => {
@@ -40,6 +38,18 @@ const Orders = () => {
   const handleView = (orderId) => {
     setModalView(!modalView);
     setRowId(orderId);
+  };
+  const handleDelete = async (orderId) => {
+    setIsLoading(true);
+    try {
+      const res = await request.postRequest(`orders/deleteAD/${orderId}`);
+      if (res.status === 200) {
+        toast.success(res.data.message);
+        fetchOrders();
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleChange = async (e, order) => {
@@ -187,7 +197,10 @@ const Orders = () => {
                             <TableCell>{order.created_at}</TableCell>
                             <TableCell>
                               <div className="handleButtonAction">
-                                <button className="btn btn-danger">
+                                <button
+                                  className="btn btn-danger"
+                                  onClick={() => handleDelete(order.id)}
+                                >
                                   Delete
                                 </button>
                                 &nbsp;

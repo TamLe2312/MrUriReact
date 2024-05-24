@@ -197,6 +197,23 @@ const deleteOrder = (req, res) => {
     );
   }
 };
+const deleteOrderAdmin = (req, res) => {
+  const id = req.params.id;
+  if (id) {
+    connection.query(
+      `DELETE FROM orders WHERE id = (?)`,
+      [id],
+      (err, results, fields) => {
+        if (err) {
+          return res.status(500).json({ message: "Lỗi máy chủ" });
+        }
+        if (results) {
+          return res.status(200).json({ message: "Delete success" });
+        }
+      }
+    );
+  }
+};
 
 const getAll = (req, res) => {
   connection.query(
@@ -333,4 +350,5 @@ module.exports = {
   editStatus,
   getChart,
   getOrderById,
+  deleteOrderAdmin,
 };

@@ -401,7 +401,7 @@ const editPassword = (req, res) => {
 };
 const getSlide = (req, res) => {
   const sql = `
-  SELECT sliders.*, categories.category_slug 
+  SELECT sliders.*, categories.category_name 
   FROM sliders 
   INNER JOIN categories 
   ON categories.id = sliders.path
@@ -416,9 +416,13 @@ const getSlide = (req, res) => {
         const altValid = item.alt
           .replace(/_/g, " ")
           .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+        const categoryNameValid = item.category_name
+          .replace(/_/g, " ")
+          .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
         return {
           ...item,
           alt: altValid,
+          category_name: categoryNameValid,
         };
       });
       return res

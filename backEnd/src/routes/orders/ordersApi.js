@@ -11,6 +11,7 @@ const {
   editStatus,
   getChart,
   getOrderById,
+  deleteOrderAdmin,
 } = require("../../controller/orders/orders");
 const Router = express.Router();
 
@@ -23,5 +24,6 @@ Router.post("/editStatus", editStatus);
 Router.post("/cancel", cancelOrder);
 Router.post("/return", returnOrder);
 Router.post("/delete", deleteOrder);
+Router.post("/deleteAD/:id", deleteOrderAdmin);
 
 module.exports = Router;

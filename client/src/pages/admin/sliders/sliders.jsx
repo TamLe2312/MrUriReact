@@ -23,12 +23,14 @@ import { APP_URL } from "../../../config/env";
 const Sliders = () => {
   const { socket } = useContext(SocketContext);
   const [page, setPage] = useState(0);
+  const [total, setTotal] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [formData, setFormData] = useState({
     alt: "",
     path: "",
   });
   const [sliders, setSliders] = useState([]);
+  const [slidersNum, setSlidersNum] = useState([]);
   const [options, setOptions] = useState([]);
   const [isEdit, setIsEdit] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -196,12 +198,26 @@ const Sliders = () => {
       }
     }
   };
+  useEffect(() => {
+    if (sliders && sliders.length > 0) {
+      setIsLoading(true);
+      const lastIndex = (page + 1) * rowsPerPage;
+      const firstIndex = lastIndex - rowsPerPage;
+      const records = sliders.slice(firstIndex, lastIndex);
+      setSlidersNum(records);
+      setIsLoading(false);
+    }
+  }, [page, rowsPerPage]);
   const fetchSliders = async () => {
     try {
       const res = await request.getRequest(`users/slider`);
-      console.log(res);
       if (res.status === 200) {
         setSliders(res.data.results);
+        setTotal(res.data.results.length);
+        const lastIndex = (page + 1) * rowsPerPage;
+        const firstIndex = lastIndex - rowsPerPage;
+        const records = res.data.results.slice(firstIndex, lastIndex);
+        setSlidersNum(records);
         setIsLoading(false);
       }
     } catch (err) {
@@ -347,8 +363,8 @@ const Sliders = () => {
                     ? Array(rowsPerPage)
                         .fill(0)
                         .map((_, index) => <UserSkeleton key={index} />)
-                    : sliders &&
-                      sliders.map((slider) => {
+                    : slidersNum &&
+                      slidersNum.map((slider) => {
                         return (
                           <TableRow key={slider.id}>
                             <TableCell>{slider.id}</TableCell>
@@ -380,7 +396,7 @@ const Sliders = () => {
               <TablePagination
                 rowsPerPageOptions={[10, 25, 100]}
                 component="div"
-                count={sliders.length}
+                count={total}
                 rowsPerPage={rowsPerPage}
                 page={page}
                 onPageChange={handleChangePage}

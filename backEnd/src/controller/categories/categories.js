@@ -5,12 +5,13 @@ require("dotenv").config();
 const getCategories = (req, res) => {
   connection.query(
     `
-    SELECT c.*, p.category_name AS parent_category_name
-    FROM categories c
-    LEFT JOIN categories p ON c.parent_category = p.id
-  `,
+      SELECT c.*, p.category_name AS parent_category_name
+      FROM categories c
+      LEFT JOIN categories p ON c.parent_category = p.id
+    `,
     (err, data) => {
       if (err) {
+        console.log(err);
         return res.status(500).json({ message: "Lỗi máy chủ" });
       }
       if (data.length > 0) {

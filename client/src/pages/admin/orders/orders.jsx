@@ -20,8 +20,10 @@ import OrderViewDetail from "./orderViewDetail";
 
 const Orders = () => {
   const [page, setPage] = useState(0);
+  const [total, setTotal] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [orders, setOrders] = useState();
+  const [ordersNum, setOrdersNum] = useState();
   const [modalView, setModalView] = useState(false);
   const [rowId, setRowId] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -98,13 +100,27 @@ const Orders = () => {
       }
     }
   };
-
+  useEffect(() => {
+    if (orders && orders.length > 0) {
+      setIsLoading(true);
+      const lastIndex = (page + 1) * rowsPerPage;
+      const firstIndex = lastIndex - rowsPerPage;
+      const records = orders.slice(firstIndex, lastIndex);
+      setOrdersNum(records);
+      setIsLoading(false);
+    }
+  }, [page, rowsPerPage]);
   const fetchOrders = async () => {
     try {
       const res = await request.getRequest(`orders/getAll`);
       if (res.status === 200) {
         // console.log(res);
         setOrders(res.data.results);
+        setTotal(res.data.results.length);
+        const lastIndex = (page + 1) * rowsPerPage;
+        const firstIndex = lastIndex - rowsPerPage;
+        const records = res.data.results.slice(firstIndex, lastIndex);
+        setOrdersNum(records);
         setIsLoading(false);
       }
     } catch (err) {

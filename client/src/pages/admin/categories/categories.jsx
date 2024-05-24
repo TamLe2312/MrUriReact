@@ -17,10 +17,12 @@ import UserSkeleton from "../../../components/skeleton/userSkeleton/userSkeleton
 import Validation from "../../../components/validation/validation";
 
 const Categories = () => {
+  const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
-  const [errors, setErrors] = useState({});
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [errors, setErrors] = useState({});
   const [categories, setCategories] = useState();
+  const [categoriesNum, setCategoriesNum] = useState();
   const [parentCategories, setParentCategories] = useState();
   const [isLoading, setIsLoading] = useState(true);
   const [isEdit, setIsEdit] = useState(false);
@@ -44,9 +46,19 @@ const Categories = () => {
   };
 
   const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(+event.target.value);
+    setRowsPerPage(event.target.value);
     setPage(0);
   };
+  useEffect(() => {
+    if (categories && categories.length > 0) {
+      setIsLoading(true);
+      const lastIndex = (page + 1) * rowsPerPage;
+      const firstIndex = lastIndex - rowsPerPage;
+      const records = categories.slice(firstIndex, lastIndex);
+      setCategoriesNum(records);
+      setIsLoading(false);
+    }
+  }, [page, rowsPerPage]);
 
   const handleChange = (e) => {
     // console.log(e.target.value, e.target.name);
@@ -174,14 +186,18 @@ const Categories = () => {
       const res = await request.getRequest(`categories`);
       if (res.data.results.length > 0) {
         // console.log(res);
+        setTotal(res.data.results.length);
         setCategories(res.data.results);
+        const lastIndex = (page + 1) * rowsPerPage;
+        const firstIndex = lastIndex - rowsPerPage;
+        const records = res.data.results.slice(firstIndex, lastIndex);
+        setCategoriesNum(records);
         setIsLoading(false);
       }
     } catch (err) {
       console.error(err);
     }
   };
-
   useEffect(() => {
     fetchParent();
     fetchCategories();
@@ -329,8 +345,8 @@ const Categories = () => {
                     ? Array(rowsPerPage)
                         .fill(0)
                         .map((_, index) => <UserSkeleton key={index} />)
-                    : categories &&
-                      categories.map((category) => {
+                    : categoriesNum &&
+                      categoriesNum.map((category) => {
                         return (
                           <TableRow key={category.id}>
                             <TableCell>{category.category_name}</TableCell>
@@ -369,7 +385,7 @@ const Categories = () => {
               <TablePagination
                 rowsPerPageOptions={[10, 25, 100]}
                 component="div"
-                count={categories.length}
+                count={total}
                 rowsPerPage={rowsPerPage}
                 page={page}
                 onPageChange={handleChangePage}

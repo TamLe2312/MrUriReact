@@ -22,6 +22,8 @@ import { SocketContext } from "../../../context/socketContext";
 const Products = () => {
   const { socket } = useContext(SocketContext);
   const [products, setProducts] = useState();
+  const [total, setTotal] = useState(0);
+  const [productsNum, setProductsNum] = useState();
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const navigate = useNavigate();
@@ -35,16 +37,30 @@ const Products = () => {
     setRowsPerPage(+event.target.value);
     setPage(0);
   };
-
+  useEffect(() => {
+    if (products && products.length > 0) {
+      setIsLoading(true);
+      const lastIndex = (page + 1) * rowsPerPage;
+      const firstIndex = lastIndex - rowsPerPage;
+      const records = products.slice(firstIndex, lastIndex);
+      setProductsNum(records);
+      setIsLoading(false);
+    }
+  }, [page, rowsPerPage]);
   const fetchProducts = async () => {
     try {
       const res = await request.getRequest(`products`);
       if (res.data.results.length > 0) {
         setProducts(res.data.results);
+        setTotal(res.data.results.length);
+        const lastIndex = (page + 1) * rowsPerPage;
+        const firstIndex = lastIndex - rowsPerPage;
+        const records = res.data.results.slice(firstIndex, lastIndex);
+        setProductsNum(records);
         setIsLoading(false);
       }
     } catch (err) {
-      // console.error(err);
+      console.error(err);
     }
   };
 
@@ -104,8 +120,8 @@ const Products = () => {
                     ? Array(rowsPerPage)
                         .fill(0)
                         .map((_, i) => <ProductAdminSkeleton key={i} />)
-                    : products &&
-                      products.map((product) => {
+                    : productsNum &&
+                      productsNum.map((product) => {
                         return (
                           <TableRow key={product.id}>
                             <TableCell>{product.id}</TableCell>
@@ -149,7 +165,7 @@ const Products = () => {
               <TablePagination
                 rowsPerPageOptions={[10, 25, 100]}
                 component="div"
-                count={products.length}
+                count={total}
                 rowsPerPage={rowsPerPage}
                 page={page}
                 onPageChange={handleChangePage}

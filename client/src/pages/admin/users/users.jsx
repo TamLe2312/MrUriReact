@@ -19,6 +19,8 @@ const Users = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [users, setUsers] = useState();
+  const [total, setTotal] = useState(0);
+  const [usersNum, setUsersNum] = useState();
   const [isLoading, setIsLoading] = useState(true);
   const [isEdit, setIsEdit] = useState(false);
   const [formData, setFormData] = useState({
@@ -122,12 +124,26 @@ const Users = () => {
       setIsLoading(false);
     }
   };
-
+  useEffect(() => {
+    if (users && users.length > 0) {
+      setIsLoading(true);
+      const lastIndex = (page + 1) * rowsPerPage;
+      const firstIndex = lastIndex - rowsPerPage;
+      const records = users.slice(firstIndex, lastIndex);
+      setUsersNum(records);
+      setIsLoading(false);
+    }
+  }, [page, rowsPerPage]);
   const fetchUser = async () => {
     try {
       const res = await request.getRequest(`users`);
       if (res.data) {
         setUsers(res.data.results);
+        setTotal(res.data.results.length);
+        const lastIndex = (page + 1) * rowsPerPage;
+        const firstIndex = lastIndex - rowsPerPage;
+        const records = res.data.results.slice(firstIndex, lastIndex);
+        setUsersNum(records);
         setIsLoading(false);
       }
     } catch (err) {
@@ -224,8 +240,8 @@ const Users = () => {
                     ? Array(rowsPerPage)
                         .fill(0)
                         .map((_, index) => <UserSkeleton key={index} />)
-                    : users &&
-                      users.map((user) => {
+                    : usersNum &&
+                      usersNum.map((user) => {
                         return (
                           <TableRow key={user.id}>
                             <TableCell>{user.username}</TableCell>
@@ -257,7 +273,7 @@ const Users = () => {
               <TablePagination
                 rowsPerPageOptions={[10, 25, 100]}
                 component="div"
-                count={users.length}
+                count={total}
                 rowsPerPage={rowsPerPage}
                 page={page}
                 onPageChange={handleChangePage}

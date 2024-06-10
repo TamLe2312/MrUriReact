@@ -15,7 +15,7 @@ import { useContext, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
-import ProductAdminSkeleton from "../../../components/skeleton/productAdminSkeleton/productAdminSkeleton";
+import SkeletonRow4 from "../../../components/skeleton/skeletonRow4/skeletonRow4";
 import * as request from "../../../utilities/request";
 import { SocketContext } from "../../../context/socketContext";
 
@@ -50,6 +50,7 @@ const Products = () => {
   const fetchProducts = async () => {
     try {
       const res = await request.getRequest(`products`);
+      // console.log(res);
       if (res.data.results.length > 0) {
         setProducts(res.data.results);
         setTotal(res.data.results.length);
@@ -72,8 +73,22 @@ const Products = () => {
       });
       if (res.status === 200) {
         toast.success(res.data.message);
-        console.log("OK");
         await socket.emit("delete_product", id);
+        fetchProducts();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+  const handleChangeFS = async (FS, id) => {
+    const newFS = FS === 1 ? 0 : 1;
+    try {
+      const res = await request.postRequest("products/featureProduct", {
+        id: id,
+        featureProduct: newFS,
+      });
+      if (res.status === 200) {
+        toast.success(res.data.message);
         fetchProducts();
       }
     } catch (err) {
@@ -107,10 +122,7 @@ const Products = () => {
                   <TableRow>
                     <TableCell align="left">ID</TableCell>
                     <TableCell align="left">Product Name</TableCell>
-                    <TableCell align="left">Stock</TableCell>
-                    <TableCell align="left">Selling Price</TableCell>
-                    <TableCell align="left">Imported Price</TableCell>
-                    <TableCell align="left">Status</TableCell>
+                    <TableCell align="left">Feature Product</TableCell>
                     <TableCell align="left">Created At</TableCell>
                     <TableCell align="left">Action</TableCell>
                   </TableRow>
@@ -119,17 +131,31 @@ const Products = () => {
                   {isLoading
                     ? Array(rowsPerPage)
                         .fill(0)
-                        .map((_, i) => <ProductAdminSkeleton key={i} />)
+                        .map((_, i) => <SkeletonRow4 key={i} />)
                     : productsNum &&
                       productsNum.map((product) => {
                         return (
                           <TableRow key={product.id}>
                             <TableCell>{product.id}</TableCell>
                             <TableCell>{product.product_name}</TableCell>
-                            <TableCell>{product.stock}</TableCell>
-                            <TableCell>{product.selling_price}</TableCell>
-                            <TableCell>{product.imported_price}</TableCell>
-                            <TableCell>{product.status}</TableCell>
+                            <TableCell>
+                              <div className="cl-toggle-switch">
+                                <label className="cl-switch">
+                                  <input
+                                    type="checkbox"
+                                    id="flashSale"
+                                    defaultChecked={product.flash_sale === 1}
+                                    onChange={() =>
+                                      handleChangeFS(
+                                        product.flash_sale,
+                                        product.id
+                                      )
+                                    }
+                                  />
+                                  <span></span>
+                                </label>
+                              </div>
+                            </TableCell>
                             <TableCell>{product.created_at}</TableCell>
                             <TableCell>
                               <div className="handleButtonAction">

@@ -12,7 +12,9 @@ import { useEffect, useState } from "react";
 import * as request from "../../../utilities/request";
 import { toast } from "sonner";
 import Validation from "../../../components/validation/validation";
-
+import { signInWithPopup, GoogleAuthProvider, getAuth } from "firebase/auth";
+import { app, auth, provider } from "../../../config/firebase";
+import GoogleIcon from "@mui/icons-material/Google";
 // TODO remove, this demo shouldn't need to reset the theme.
 
 const defaultTheme = createTheme();
@@ -86,6 +88,36 @@ const SignIn = () => {
       setRememberMe(true);
     }
   }, []);
+  const signInGoogle = async () => {
+    try {
+      const result = await signInWithPopup(auth, provider);
+      // This gives you a Google Access Token. You can use it to access the Google API.
+      // const credential = GoogleAuthProvider.credentialFromResult(result);
+      // const token = credential.accessToken;
+      // The signed-in user info.
+      const user = result.user;
+      // Make the post request
+      const res = await request.postRequest("users/google", {
+        user: user.reloadUserInfo,
+      });
+      if (res.status === 200) {
+        toast.success(res.data.message);
+        if (res.data.isGoogle) {
+          localStorage.setItem("isGoogle", res.data.localId);
+        }
+        navigate("/");
+      }
+    } catch (error) {
+      console.error(error);
+      // Handle Errors here.
+      // const errorCode = error.code;
+      // const errorMessage = error.message;
+      // The email of the user's account used.
+      // const email = error.customData.email;
+      // The AuthCredential type that was used.
+      // const credential = GoogleAuthProvider.credentialFromError(error);
+    }
+  };
 
   return (
     <ThemeProvider theme={defaultTheme}>
@@ -98,7 +130,7 @@ const SignIn = () => {
           md={7}
           sx={{
             backgroundImage:
-              "url(https://source.unsplash.com/random?wallpapers)",
+              "url(https://images.unsplash.com/photo-1716724896440-2387551fde66?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D)",
             backgroundRepeat: "no-repeat",
             backgroundColor: (t) =>
               t.palette.mode === "light"
@@ -187,6 +219,9 @@ const SignIn = () => {
                 <Link to="/forgot-password">Forgot Password?</Link>
                 <Link to="/sign-up">Don't have an account? Sign Up</Link>
               </div>
+              <button className="btn btn-primary" onClick={signInGoogle}>
+                <GoogleIcon /> Login with Google
+              </button>
             </div>
           </Box>
         </Grid>

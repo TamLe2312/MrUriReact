@@ -332,6 +332,42 @@ const categoriesProductView = (req, res) => {
   }
 };
 
+const getProductCategories = (req, res) => {
+  connection.query(
+    `
+      SELECT DISTINCT categories.id, categories.category_name 
+FROM categories
+INNER JOIN productcategories ON categories.id = productcategories.category_id
+INNER JOIN products ON productcategories.product_id = products.id
+ORDER BY RAND() 
+LIMIT 4;
+
+    `,
+    (err, data) => {
+      if (err) {
+        console.log(err);
+        return res.status(500).json({ message: "Lỗi máy chủ" });
+      }
+      if (data.length > 0) {
+        const transformedData = data.map((item) => {
+          const categoryName = item.category_name
+            .replace(/_/g, " ")
+            .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+          return {
+            ...item,
+            category_name: categoryName,
+          };
+        });
+        return res
+          .status(200)
+          .json({ message: "Success", results: transformedData });
+      } else {
+        return res.status(200).json({ message: "Success", results: [] });
+      }
+    }
+  );
+};
+
 module.exports = {
   getCategories,
   getParentCategories,
@@ -342,4 +378,5 @@ module.exports = {
   relatedCategories,
   relatedCategoriesDetail,
   categoriesProductView,
+  getProductCategories,
 };

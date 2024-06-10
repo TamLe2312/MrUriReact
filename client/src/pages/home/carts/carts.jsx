@@ -8,8 +8,12 @@ import { UserContext } from "../../../context/userProvider";
 import { APP_URL } from "../../../config/env";
 import * as request from "../../../utilities/request";
 import { CartContext } from "../../../context/cartProvider";
+import { formatNumber } from "../../../helper/helper";
 
 const Carts = () => {
+  const format = (price) => {
+    return formatNumber(parseInt(price));
+  };
   const navigate = useNavigate();
   const { user, handleSet } = useContext(UserContext);
   const { carts, dispatch } = useContext(CartContext);
@@ -23,7 +27,6 @@ const Carts = () => {
       try {
         const res = await request.getRequest(`carts/cart/${user.id}`);
         if (res.status === 200) {
-          // console.log(res);
           setCartItems(res.data.results);
           // console.log(cartItems);
         }
@@ -39,14 +42,14 @@ const Carts = () => {
     if (e.target.value <= 0) {
       e.target.value = 1;
     }
-    const product = await request.getRequest(
-      `products/product/${cart.product_id}`
+    const product = await request.postRequest(
+      `products/product/${cart.product_detail_id}`
     );
     if (parseInt(e.target.value) > parseInt(product.data.results.stock)) {
       e.target.value = product.data.results.stock;
     }
     cartItems.forEach((element, index) => {
-      if (element.id === cart.id) {
+      if (element.product_detail_id === cart.product_detail_id) {
         cartItems[index].quantity = e.target.value;
         changeCart(element);
       }
@@ -56,7 +59,7 @@ const Carts = () => {
   const changeCart = async (cart) => {
     try {
       const res = await request.postRequest(`carts/changeQuantity`, {
-        user_id: user.id,
+        userId: user.id,
         cart: cart,
       });
       // console.log(res);
@@ -78,9 +81,11 @@ const Carts = () => {
         },
       });
       // console.log(cart);
-      const index = cartItems.findIndex((item) => item.id === cart.id);
-      // console.log(cartItems);
+      const index = cartItems.findIndex(
+        (item) => item.product_detail_id === cart.product_detail_id
+      );
       cartItems.splice(index, 1);
+      changeTotal(cartItems);
     }
   };
 
@@ -99,18 +104,41 @@ const Carts = () => {
       console.error(err);
     }
   };
+  const fetchGoogle = async (localId) => {
+    try {
+      const res = await request.postRequest("users/verifyGoogle", {
+        localId,
+      });
+      if (res.status === 200) {
+        /* console.log(res);
+        setUser(res.data.results); */
+        handleSet(res.data.results);
+        fetchCarts(res.data.results);
+      }
+    } catch (err) {
+      if (err.response.status === 500) {
+        localStorage.removeItem("isGoogle");
+      }
+      console.error(err);
+    }
+  };
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      fetchUser(token);
+    const isGoogle = localStorage.getItem("isGoogle");
+    if (isGoogle) {
+      fetchGoogle(isGoogle);
     } else {
-      handleSet(null);
-      toast.error("You need to sign in first");
-      navigate("/sign-in");
+      const token = localStorage.getItem("token");
+      if (token) {
+        fetchUser(token);
+      } else {
+        handleSet(null);
+        toast.error("You need to sign in first");
+        navigate("/sign-in");
+      }
     }
   }, []);
 
-  useEffect(() => {
+  const changeTotal = (cartItems) => {
     if (cartItems.length > 0) {
       let currentTotal = 0;
       cartItems.map((item) => {
@@ -120,6 +148,10 @@ const Carts = () => {
     } else {
       setTotal(0);
     }
+  };
+
+  useEffect(() => {
+    changeTotal(cartItems);
   }, [cartItems]);
 
   return (
@@ -170,10 +202,16 @@ const Carts = () => {
                           </div>
                         </th>
                         <td>
-                          <p className="mb-0 ">{cart.product_name}</p>
+                          <p className="mb-0 ">
+                            {cart.product_name}
+                            <div className="variantTitle">
+                              {cart.variation_name}
+                              <strong>{cart.variation_value}</strong>
+                            </div>
+                          </p>
                         </td>
                         <td>
-                          <p className="mb-0 ">{cart.selling_price} đ</p>
+                          <p className="mb-0 ">{format(cart.selling_price)}</p>
                         </td>
                         <td>
                           <div
@@ -190,7 +228,7 @@ const Carts = () => {
                         </td>
                         <td>
                           <p className="mb-0">
-                            {cart.selling_price * cart.quantity} đ
+                            {format(cart.selling_price * cart.quantity)}
                           </p>
                         </td>
                         <td>
@@ -230,17 +268,15 @@ const Carts = () => {
             <div className="col-sm-8 col-md-7 col-lg-6 col-xl-4">
               <div className="bg-light rounded">
                 <div className="p-4">
-                  <h1 className="display-6 mb-4">
-                    Cart <span className="fw-normal">Total</span>
-                  </h1>
-                  <div className="d-flex justify-content-between mb-4">
+                  <h1 className="display-6 mb-4">Cart Total</h1>
+                  <div className="d-flex justify-content-between">
                     <h5 className="mb-0 me-4">Subtotal:</h5>
-                    <p className="mb-0">{total} đ</p>
+                    <p className="mb-0">{format(total)}</p>
                   </div>
                 </div>
                 <div className="py-4 mb-4 border-top border-bottom d-flex justify-content-between">
                   <h5 className="mb-0 ps-4 me-4">Total</h5>
-                  <p className="mb-0 pe-4">{total} đ</p>
+                  <p className="mb-0 pe-4">{format(total)}</p>
                 </div>
                 <a
                   className="btn border-secondary rounded-pill px-4 py-3 text-primary text-uppercase mb-4 ms-4"

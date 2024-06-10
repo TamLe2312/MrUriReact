@@ -55,26 +55,17 @@ export const mainListItems = (
 
 export const secondaryListItems = (
   <React.Fragment>
-    <ListSubheader component="div" inset>
-      Saved reports
-    </ListSubheader>
-    <ListItemButton component={Link} to="/current-month">
+    <ListItemButton component={Link} to="/dashboard/variation">
       <ListItemIcon>
         <AssignmentIcon />
       </ListItemIcon>
-      <ListItemText primary="Current month" />
+      <ListItemText primary="Variation" />
     </ListItemButton>
-    <ListItemButton component={Link} to="/last-quarter">
+    <ListItemButton component={Link} to="/dashboard/variationValue">
       <ListItemIcon>
         <AssignmentIcon />
       </ListItemIcon>
-      <ListItemText primary="Last quarter" />
-    </ListItemButton>
-    <ListItemButton component={Link} to="/year-end-sale">
-      <ListItemIcon>
-        <AssignmentIcon />
-      </ListItemIcon>
-      <ListItemText primary="Year-end sale" />
+      <ListItemText primary="Variation Value" />
     </ListItemButton>
   </React.Fragment>
 );

@@ -19,7 +19,7 @@ Router.post("/changeQuantity", changeQuantity);
 Router.post("/add", addCart);
 Router.post("/check-out", upload.none(), checkOut);
 Router.post("/vnpay-return", upload.none(), vnpayReturn);
-Router.delete("/delete/:id", deleteCart);
+Router.post("/delete", deleteCart);
 Router.delete("/clear/:id", clearCart);
 
 module.exports = Router;

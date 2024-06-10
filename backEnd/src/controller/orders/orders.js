@@ -51,29 +51,34 @@ const getOrderById = (req, res) => {
   const { id, userId } = req.body;
   if (id && userId) {
     connection.query(
-      `SELECT orders.id,
-              users.username,
-              orders.address,
-              orders.pay,
-              orders.phone_number,
-              orders.total,
-              orders.status,
-              orders.created_at,
-              GROUP_CONCAT(
-                JSON_OBJECT(
-                  'quantity', order_details.quantity,
-                  'price', order_details.price,
-                  'img', order_details.img,
-                  'product_name', products.product_name
-                )
-              ) AS order_details
-       FROM orders
-       INNER JOIN order_details ON order_details.order_id = orders.id
-       INNER JOIN users ON users.id = orders.user_id
-       INNER JOIN products ON products.id = order_details.product_id
-       WHERE orders.user_id = ? AND orders.id = ?
-       GROUP BY orders.id
-      `,
+      `SELECT 
+  orders.id,
+  users.username,
+  orders.address,
+  orders.pay,
+  orders.phone_number,
+  orders.total,
+  orders.status,
+  orders.created_at,
+  GROUP_CONCAT(
+    JSON_OBJECT(
+      'quantity', order_details.quantity,
+      'price', order_details.price,
+      'img', order_details.img,
+      'product_name', products.product_name,
+      'variation_name', variation.name,
+      'variation_value', variationOption.value
+    )
+  ) AS order_details
+FROM orders
+INNER JOIN order_details ON order_details.order_id = orders.id
+INNER JOIN productConfiguration ON order_details.product_detail_id = productConfiguration.product_detail_id
+INNER JOIN variationOption ON productConfiguration.variation_option_id = variationOption.id
+INNER JOIN variation ON variationOption.variation_id = variation.id
+INNER JOIN users ON users.id = orders.user_id
+INNER JOIN products ON products.id = order_details.product_id
+WHERE orders.user_id = ? AND orders.id = ?
+GROUP BY orders.id`,
       [userId, id],
       (err, data) => {
         if (err) {
@@ -103,6 +108,12 @@ const getOrderById = (req, res) => {
                 return {
                   ...detail,
                   product_name: detail.product_name
+                    .replace(/_/g, " ")
+                    .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase()),
+                  variation_name: detail.variation_name
+                    .replace(/_/g, " ")
+                    .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase()),
+                  variation_value: detail.variation_value
                     .replace(/_/g, " ")
                     .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase()),
                 };
@@ -224,14 +235,11 @@ const getAll = (req, res) => {
         return res.status(500).json({ message: "Lỗi máy chủ" });
       }
       if (data.length > 0) {
+        console.log(data);
         const transformedData = data.map((item) => {
           const pay = item.pay
             .replace(/_/g, " ")
             .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
-          const status = item.status
-            .replace(/_/g, " ")
-            .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
-
           const createdAt = new Date(item.created_at).toLocaleDateString(
             "vi-VN",
             {
@@ -244,7 +252,6 @@ const getAll = (req, res) => {
             ...item,
             pay: pay,
             created_at: createdAt,
-            status_name: status,
           };
         });
         return res
@@ -282,7 +289,7 @@ const getChart = (req, res) => {
     for (let i = 0; i < 7; i++) {
       const day = moment().subtract(i, "days").format("YYYY-MM-DD");
       connection.query(
-        `SELECT SUM(total) as total FROM orders WHERE DATE(created_at) = '${day}'`,
+        `SELECT SUM(total) AS total FROM orders WHERE DATE(created_at) = '${day}' AND status = 'confirm'`,
         (err, datas) => {
           if (err) {
             reject("Lỗi máy chủ");
@@ -307,7 +314,7 @@ const getChart = (req, res) => {
         .subtract(i, "months")
         .endOf("month")
         .format("YYYY-MM-DD");
-      const query = `SELECT SUM(total) AS total FROM orders WHERE DATE(created_at) BETWEEN '${firstDayOfMonth}' AND '${lastDayOfMonth}'`;
+      const query = `SELECT SUM(total) AS total FROM orders WHERE DATE(created_at) BETWEEN '${firstDayOfMonth}' AND '${lastDayOfMonth}' AND status = 'confirm'`;
       connection.query(query, (err, datas) => {
         if (err) {
           reject("Lỗi máy chủ");

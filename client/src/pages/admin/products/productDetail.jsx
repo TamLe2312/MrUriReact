@@ -29,7 +29,7 @@ const ProductDetail = () => {
         const categories = res.data.results[0].category_names
           .map((category) => category.label)
           .join(",");
-        console.log(categories);
+        // console.log(categories);
         setCategories(categories);
         setProduct(res.data.results[0]);
         const imgs = res.data.results[0].images.split(",");

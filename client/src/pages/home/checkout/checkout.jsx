@@ -1,5 +1,4 @@
 import "./checkout.css";
-import ImageTest from "../../../../public/images/vegetable-item-3.png";
 import { useContext, useEffect, useState } from "react";
 import {
   getDistricts,
@@ -14,8 +13,12 @@ import Validation from "../../../components/validation/validation";
 import { CartContext } from "../../../context/cartProvider";
 import { UserContext } from "../../../context/userProvider";
 import { APP_URL } from "../../../config/env";
+import { formatNumber } from "../../../helper/helper";
 
 const Checkout = () => {
+  const format = (price) => {
+    return formatNumber(parseInt(price));
+  };
   const [provinces, setProvinces] = useState([]);
   const [districts, setDistricts] = useState([]);
   const [wards, setWards] = useState([]);
@@ -158,7 +161,6 @@ const Checkout = () => {
       formDatas.append("wards", formData.wards.label);
       formDatas.append("userId", user.id);
       formDatas.append("total", total);
-
       cartItems.forEach((cart) => {
         formDatas.append("products", JSON.stringify(cart));
       });
@@ -212,14 +214,38 @@ const Checkout = () => {
       console.error(err);
     }
   };
+  const fetchGoogle = async (localId) => {
+    try {
+      const res = await request.postRequest("users/verifyGoogle", {
+        localId,
+      });
+      // console.log(localId);
+      if (res.status === 200) {
+        /* console.log(res);
+        setUser(res.data.results); */
+        handleSet(res.data.results);
+        fetchCarts(res.data.results);
+      }
+    } catch (err) {
+      if (err.response.status === 500) {
+        localStorage.removeItem("isGoogle");
+      }
+      console.error(err);
+    }
+  };
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      fetchUser(token);
+    const isGoogle = localStorage.getItem("isGoogle");
+    if (isGoogle) {
+      fetchGoogle(isGoogle);
     } else {
-      handleSet(null);
-      toast.error("You need to sign in first");
-      navigate("/sign-in");
+      const token = localStorage.getItem("token");
+      if (token) {
+        fetchUser(token);
+      } else {
+        handleSet(null);
+        toast.error("You need to sign in first");
+        navigate("/sign-in");
+      }
     }
   }, []);
   const [total, setTotal] = useState(0);
@@ -453,11 +479,21 @@ const Checkout = () => {
                                 />
                               </div>
                             </th>
-                            <td className="py-5">{cart.product_name}</td>
-                            <td className="py-5">{cart.selling_price} đ</td>
-                            <td className="py-5">{cart.quantity}</td>
-                            <td className="py-5">
-                              {cart.quantity * cart.selling_price} đ
+                            <td style={{ verticalAlign: "middle" }}>
+                              {cart.product_name}
+                              <div className="variantTitle">
+                                {cart.variation_name}
+                                <strong>{cart.variation_value}</strong>
+                              </div>
+                            </td>
+                            <td style={{ verticalAlign: "middle" }}>
+                              {format(cart.selling_price)}
+                            </td>
+                            <td style={{ verticalAlign: "middle" }}>
+                              {cart.quantity}
+                            </td>
+                            <td style={{ verticalAlign: "middle" }}>
+                              {format(cart.quantity * cart.selling_price)}
                             </td>
                           </tr>
                         );
@@ -478,9 +514,7 @@ const Checkout = () => {
                       <td className="py-2"></td>
                       <td className="py-2"></td>
                       <td className="py-2">
-                        <div className="py-3 border-bottom border-top">
-                          <p className="mb-0 text-dark">{total} đ</p>
-                        </div>
+                        <p className="mb-0 text-dark">{format(total)}</p>
                       </td>
                     </tr>
                   </tbody>

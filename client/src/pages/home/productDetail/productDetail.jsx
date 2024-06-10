@@ -1,6 +1,5 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import "./productDetail.css";
-import imgFetures from "../../../../public/images/featur-1.jpg";
 import RemoveIcon from "@mui/icons-material/Remove";
 import AddIcon from "@mui/icons-material/Add";
 import { useContext, useEffect, useState } from "react";
@@ -9,6 +8,7 @@ import { APP_URL } from "../../../config/env";
 import { toast } from "sonner";
 import { CartContext } from "../../../context/cartProvider";
 import { UserContext } from "../../../context/userProvider";
+import { formatNumber } from "../../../helper/helper";
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -22,6 +22,13 @@ const ProductDetail = () => {
   const [relatedCategories, setRelatedCategories] = useState();
   const { user } = useContext(UserContext);
   const { carts, dispatch } = useContext(CartContext);
+  const [selectedVariant, setSelectedVariant] = useState(null);
+  const format = (price) => {
+    return formatNumber(parseInt(price));
+  };
+  const handleVariantChange = (productDID) => {
+    setSelectedVariant(productDID);
+  };
   const handleView = (index) => {
     setViewImg(index);
   };
@@ -35,11 +42,13 @@ const ProductDetail = () => {
   const handleAddCart = () => {
     if (user) {
       const img = images[0].image_name;
+      // console.log(product);
       dispatch({
         type: "ADD_CART",
         payload: {
           user_id: user.id,
-          product_id: product.id,
+          product_id: product.product_id,
+          product_detail_id: selectedVariant,
           quantity: quantity,
           image: img,
         },
@@ -66,6 +75,7 @@ const ProductDetail = () => {
       const productDetail = await request.getRequest(
         `products/viewDetail/${id}`
       );
+      // console.log(productDetail);
       setProduct(productDetail.data.results[0]);
       const imgs = await request.getRequest(`products/viewDetailImgs/${id}`);
       // console.log(imgs.data.results);
@@ -104,7 +114,7 @@ const ProductDetail = () => {
         setRelatedProducts(productsArray);
       }
     } catch (err) {
-      // console.error(err);
+      console.error(err);
     }
   };
   const fetchRedirectCategory = async (id) => {
@@ -190,12 +200,64 @@ const ProductDetail = () => {
                       : "Không có"}
                   </h4>
                   {/* <p className="mb-3">Category: Vegetables</p> */}
-                  <h5 className="fw-bold mb-3">
-                    {product && product.selling_price
-                      ? product.selling_price
-                      : "Không có"}
-                    đ
-                  </h5>
+                  {product && product.variants.length > 0 && (
+                    <h5 className="fw-bold mb-3">
+                      {selectedVariant
+                        ? format(
+                            product.variants.find(
+                              (variant) =>
+                                variant.product_detail_id === selectedVariant
+                            )?.selling_price
+                          )
+                        : "Không có"}
+                      {/*                       {product && product.selling_price
+                        ? product.selling_price
+                        : "Không có"} */}
+                    </h5>
+                  )}
+                  {product && product.variants.length > 0 && (
+                    <div className="select_variant_container">
+                      <div className="title_variant">
+                        {product.variants[0].variation_name}
+                        <strong>
+                          {product.variants.find(
+                            (variant) =>
+                              variant.product_detail_id === selectedVariant
+                          )?.variation_value || ""}
+                        </strong>
+                      </div>
+                      <div className="select_variant">
+                        {product.variants.map((variant) => (
+                          <div
+                            className="select_variant_item"
+                            key={variant.product_detail_id}
+                          >
+                            <input
+                              type="radio"
+                              value={variant.product_detail_id}
+                              id={`variant_${variant.product_detail_id}`}
+                              checked={
+                                selectedVariant === variant.product_detail_id
+                              }
+                              onChange={() =>
+                                handleVariantChange(variant.product_detail_id)
+                              }
+                            />
+                            <label
+                              className={
+                                selectedVariant === variant.product_detail_id
+                                  ? "selected"
+                                  : null
+                              }
+                              htmlFor={`variant_${variant.product_detail_id}`}
+                            >
+                              {variant.variation_value}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   <div className="input-quantity-container">
                     <div className="input-group-btn">
                       <button
@@ -221,8 +283,13 @@ const ProductDetail = () => {
                     </div>
                   </div>
                   <button
-                    className="btn border border-secondary rounded-pill px-4 py-2 mb-4 text-primary"
+                    className={
+                      !selectedVariant
+                        ? "btn border border-secondary rounded-pill px-4 py-2 mb-4 text-primary disableAddToCart"
+                        : "btn border border-secondary rounded-pill px-4 py-2 mb-4 text-primary"
+                    }
                     onClick={handleAddCart}
+                    disabled={!selectedVariant}
                   >
                     <i className="fa fa-shopping-bag me-2 text-primary"></i>
                     Add to cart
@@ -251,13 +318,13 @@ const ProductDetail = () => {
                       id="nav-about"
                       role="tabpanel"
                       aria-labelledby="nav-about-tab"
-                    >
-                      <p>
-                        {product && product.product_description
-                          ? product.product_description
-                          : "Không có"}
-                      </p>
-                    </div>
+                      dangerouslySetInnerHTML={{
+                        __html:
+                          product && product.product_description
+                            ? product.product_description
+                            : "Không có",
+                      }}
+                    ></div>
                   </div>
                 </div>
               </div>
@@ -285,50 +352,51 @@ const ProductDetail = () => {
                   </div>
                 </div>
                 <div className="col-lg-12">
-                  <h4 className="mb-4">Featured products</h4>
-                  {relatedProducts &&
-                    relatedProducts.length > 0 &&
-                    relatedProducts.map((product) => {
-                      return (
-                        <div
-                          className="d-flex align-items-center justify-content-start"
-                          key={product.id}
-                        >
-                          <Link to={`/product/${product.id}`}>
-                            <div
-                              className="rounded me-4"
-                              style={{ width: "100px", height: "100px" }}
-                            >
-                              <img
-                                src={
-                                  APP_URL +
-                                  "/public/uploads/" +
-                                  product.images[0]
-                                }
-                                className="img-fluid rounded"
-                                alt=""
-                              />
-                            </div>
-                          </Link>
-                          <Link
-                            to={`/product/${product.id}`}
-                            style={{
-                              textDecoration: "none",
-                              color: "#000",
-                            }}
+                  <h4 className="mb-4">Relative products</h4>
+                  {relatedProducts
+                    ? relatedProducts.length > 0 &&
+                      relatedProducts.map((product) => {
+                        return (
+                          <div
+                            className="d-flex align-items-center justify-content-start"
+                            key={product.id}
                           >
-                            <div>
-                              <h6 className="mb-2">{product.product_name}</h6>
-                              <div className="d-flex mb-2">
-                                <h5 className="fw-bold me-2">
-                                  {product.selling_price} đ
-                                </h5>
+                            <Link to={`/product/${product.id}`}>
+                              <div
+                                className="rounded me-4"
+                                style={{ width: "100px", height: "100px" }}
+                              >
+                                <img
+                                  src={
+                                    APP_URL +
+                                    "/public/uploads/" +
+                                    product.images[0]
+                                  }
+                                  className="img-fluid rounded"
+                                  alt=""
+                                />
                               </div>
-                            </div>
-                          </Link>
-                        </div>
-                      );
-                    })}
+                            </Link>
+                            <Link
+                              to={`/product/${product.id}`}
+                              style={{
+                                textDecoration: "none",
+                                color: "#000",
+                              }}
+                            >
+                              <div>
+                                <h6 className="mb-2">{product.product_name}</h6>
+                                <div className="d-flex mb-2">
+                                  <h5 className="fw-bold me-2">
+                                    {product.selling_price} đ
+                                  </h5>
+                                </div>
+                              </div>
+                            </Link>
+                          </div>
+                        );
+                      })
+                    : "Don't have any relative product"}
 
                   <div className="d-flex justify-content-center my-4">
                     <a

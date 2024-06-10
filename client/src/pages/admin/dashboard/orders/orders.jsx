@@ -9,8 +9,12 @@ import Title from "../title/title";
 import * as request from "../../../../utilities/request";
 import { useState } from "react";
 import { useEffect } from "react";
+import { formatNumber } from "../../../../helper/helper";
 
 const Orders = () => {
+  const format = (price) => {
+    return formatNumber(parseInt(price));
+  };
   const [orders, setOrders] = useState();
   const fetchOrders = async () => {
     try {
@@ -51,7 +55,7 @@ const Orders = () => {
                 <TableCell>{order.address}</TableCell>
                 <TableCell>{order.pay}</TableCell>
                 <TableCell>{order.phone_number}</TableCell>
-                <TableCell>{order.total}</TableCell>
+                <TableCell>{format(order.total)}</TableCell>
                 <TableCell>{order.status}</TableCell>
                 <TableCell>{order.created_at}</TableCell>
               </TableRow>

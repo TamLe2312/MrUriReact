@@ -1,7 +1,7 @@
 import { Container, Grid, Paper } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, Component } from "react";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 import { EditProductContext } from "../../../context/editProductProvider";
@@ -12,6 +12,8 @@ import Validation from "../../../components/validation/validation";
 import * as request from "../../../utilities/request";
 import Select from "react-select";
 import { SocketContext } from "../../../context/socketContext";
+import { CKEditor } from "@ckeditor/ckeditor5-react";
+import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
 
 const AddProduct = () => {
   const { editedProduct, isEdit, setEditedProduct, setIsEdit } =
@@ -22,15 +24,13 @@ const AddProduct = () => {
   const [formData, setFormData] = useState({
     productName: "",
     productDescription: "",
-    stock: "",
-    importedPrice: "",
-    sellingPrice: "",
-    status: "stock",
     selectedCategories: [],
   });
   const [images, setImages] = useState([]);
   const [errors, setErrors] = useState({});
   const [options, setOptions] = useState([]);
+  const [optionsVariation, setOptionsVariation] = useState([]);
+  const [optionsVariationValue, setOptionsVariationValue] = useState([]);
 
   useEffect(() => {
     if (editedProduct && isEdit) {
@@ -95,31 +95,39 @@ const AddProduct = () => {
   };
 
   const validate = () => {
-    const errors = Validation(formData, "products");
+    let errors = {};
     let isValid = true;
-    setErrors(errors);
 
-    if (!images) {
-      setErrors((prevErrors) => ({
-        ...prevErrors,
-        images: "Images cannot be empty",
-      }));
+    // Validate main form data
+    const productErrors = Validation(formData, "products");
+    if (Object.keys(productErrors).length !== 0) {
+      isValid = false;
+      errors = { ...errors, ...productErrors };
     }
-    if (
-      Object.keys(errors).length !== 0 ||
-      !Object.values(formData).every((value) => value !== "")
-    ) {
+
+    // Check if images are provided
+    if (!images) {
+      errors.images = "Images cannot be empty";
       isValid = false;
     }
 
+    const variantErrors = formDataList.map((formData, index) => {
+      const errors = Validation(formData, "variation");
+      if (Object.keys(errors).length !== 0) {
+        isValid = false;
+      }
+      return errors;
+    });
+
+    setErrors({ ...errors, variants: variantErrors });
+
     return isValid;
   };
-
   const handleAdd = async () => {
     setErrors({});
     if (editedProduct) {
       try {
-        const res = await axios.put(
+        await axios.put(
           `http://localhost:3001/products/${formData.id}`,
           formData
         );
@@ -133,24 +141,25 @@ const AddProduct = () => {
       }
     } else {
       const isValid = validate();
-      // console.log(options);
+      // console.log(errors);
+      // console.log(formData);
       if (isValid) {
         try {
           const formDatas = new FormData();
           formDatas.append("productName", formData.productName);
-          formDatas.append("importedPrice", formData.importedPrice);
           formDatas.append("productDescription", formData.productDescription);
-          formDatas.append("sellingPrice", formData.sellingPrice);
-          formDatas.append("status", formData.status);
-          formDatas.append("stock", formData.stock);
           formData.selectedCategories.forEach((category) => {
             formDatas.append("productCategories", category.value);
+          });
+          formDataList.forEach((formData) => {
+            formDatas.append("variations", JSON.stringify(formData));
           });
           images.forEach((image) => {
             formDatas.append("images", image.image);
           });
 
           const response = await request.postRequest(`products/add`, formDatas);
+          console.log(response);
           if (response.status === 200) {
             toast.success(response.data.message);
             await socket.emit("add_product");
@@ -174,7 +183,18 @@ const AddProduct = () => {
             value: category.id,
             label: category.category_name,
           }));
-        setOptions((prevOptions) => prevOptions.concat(newOptions));
+        // setOptions((prevOptions) => prevOptions.concat(newOptions));
+        setOptions(newOptions);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+  const fetchVariation = async () => {
+    try {
+      const res = await request.getRequest("variation");
+      if (res.data.results.length > 0) {
+        setOptionsVariation(res.data.results);
       }
     } catch (err) {
       console.error(err);
@@ -183,8 +203,32 @@ const AddProduct = () => {
 
   useEffect(() => {
     fetchCategories();
+    fetchVariation();
   }, []);
 
+  const initialFormData = {
+    variation: "",
+    variationValue: "",
+    sellingPrice: "",
+    stock: "",
+    status: "stock",
+  };
+
+  const [formDataList, setFormDataList] = useState([{ ...initialFormData }]);
+
+  const handleChangeVariant = (index, e) => {
+    const { name, value } = e.target;
+    const newFormDataList = [...formDataList];
+    newFormDataList[index][name] = value;
+    setFormDataList(newFormDataList);
+  };
+
+  const addVariantContainer = () => {
+    setFormDataList([...formDataList, { ...initialFormData }]);
+  };
+  const Log = () => {
+    console.log(formDataList);
+  };
   return (
     <>
       <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
@@ -222,7 +266,32 @@ const AddProduct = () => {
               </div>
               <div className="form-group">
                 <label>Product Description</label>
-                <textarea
+                <CKEditor
+                  editor={ClassicEditor}
+                  data={formData.productDescription}
+                  onReady={(editor) => {
+                    editor.editing.view.change((writer) => {
+                      writer.setStyle(
+                        "height",
+                        "200px",
+                        editor.editing.view.document.getRoot()
+                      );
+                    });
+                  }}
+                  onChange={(event, editor) => {
+                    const data = editor.getData();
+                    setFormData({ ...formData, productDescription: data });
+                  }}
+                />
+                {errors.productDescription && (
+                  <div
+                    id="validationServerBrandFeedback"
+                    className="invalid-feedback"
+                  >
+                    {errors.productDescription}
+                  </div>
+                )}
+                {/*  <textarea
                   className={
                     errors.productDescription
                       ? "form-control is-invalid"
@@ -240,97 +309,7 @@ const AddProduct = () => {
                   >
                     {errors.productDescription}
                   </div>
-                )}
-              </div>
-              <div className="form-group">
-                <label>Stock</label>
-                <input
-                  type="text"
-                  className={
-                    errors.stock ? "form-control is-invalid" : "form-control"
-                  }
-                  id="stock"
-                  name="stock"
-                  value={formData.stock}
-                  onChange={handleChange}
-                />
-                {errors.stock && (
-                  <div
-                    id="validationServerBrandFeedback"
-                    className="invalid-feedback"
-                  >
-                    {errors.stock}
-                  </div>
-                )}
-              </div>
-              <div className="form-group">
-                <label>Imported Price</label>
-                <input
-                  type="text"
-                  className={
-                    errors.importedPrice
-                      ? "form-control is-invalid"
-                      : "form-control"
-                  }
-                  id="importedPrice"
-                  name="importedPrice"
-                  value={formData.importedPrice}
-                  onChange={handleChange}
-                />
-                {errors.importedPrice && (
-                  <div
-                    id="validationServerBrandFeedback"
-                    className="invalid-feedback"
-                  >
-                    {errors.importedPrice}
-                  </div>
-                )}
-              </div>
-              <div className="form-group">
-                <label>Selling Price</label>
-                <input
-                  type="text"
-                  className={
-                    errors.sellingPrice
-                      ? "form-control is-invalid"
-                      : "form-control"
-                  }
-                  id="sellingPrice"
-                  name="sellingPrice"
-                  value={formData.sellingPrice}
-                  onChange={handleChange}
-                />
-                {errors.sellingPrice && (
-                  <div
-                    id="validationServerBrandFeedback"
-                    className="invalid-feedback"
-                  >
-                    {errors.sellingPrice}
-                  </div>
-                )}
-              </div>
-              <div className="form-group">
-                <label>Status</label>
-                <select
-                  id="status"
-                  className={
-                    errors.status ? "form-control is-invalid" : "form-control"
-                  }
-                  onChange={handleChange}
-                  name="status"
-                  value={formData.status}
-                >
-                  <option value="stock">Stock</option>
-                  <option value="out_stock">Out Stock</option>
-                </select>
-                {errors.status && (
-                  <div
-                    id="validationServerBrandFeedback"
-                    className="invalid-feedback"
-                  >
-                    {errors.status}
-                  </div>
-                )}
+                )} */}
               </div>
               <div className="form-group">
                 <label>Categories</label>
@@ -344,15 +323,320 @@ const AddProduct = () => {
                   onChange={handleChangeCategories}
                 />
 
-                {errors.categories && (
+                {errors.selectedCategories && (
                   <div
                     id="validationServerBrandFeedback"
                     className="invalid-feedback"
                   >
-                    {errors.categories}
+                    {errors.selectedCategories}
                   </div>
                 )}
               </div>
+              {/*    <div className="variantContainer">
+                <div className="row">
+                  <div className="col-md-4">
+                    <label>Variation</label>
+                    <select
+                      id="variation"
+                      className={
+                        errors.variation
+                          ? "form-control is-invalid"
+                          : "form-control"
+                      }
+                      onChange={handleChange}
+                      name="variation"
+                      value={formData.variation}
+                    >
+                      {errors.variation && (
+                        <div
+                          id="validationServerBrandFeedback"
+                          className="invalid-feedback"
+                        >
+                          {errors.variation}
+                        </div>
+                      )}
+                      <option value="">Select your variant</option>
+                      {optionsVariation && optionsVariation.length > 0 && (
+                        <>
+                          {optionsVariation.map((option) => (
+                            <option key={option.id} value={option.id}>
+                              {option.variationName}
+                            </option>
+                          ))}
+                        </>
+                      )}
+                    </select>
+                    {errors.variation && (
+                      <div
+                        id="validationServerBrandFeedback"
+                        className="invalid-feedback"
+                      >
+                        {errors.variation}
+                      </div>
+                    )}
+                  </div>
+                  <div className="col-md-4">
+                    <label>Variation Value</label>
+                    <select
+                      id="variationValue"
+                      className={
+                        errors.variationValue
+                          ? "form-control is-invalid"
+                          : "form-control"
+                      }
+                      onChange={handleChange}
+                      name="variationValue"
+                      value={formData.variationValue}
+                    >
+                      {errors.variationValue && (
+                        <div
+                          id="validationServerBrandFeedback"
+                          className="invalid-feedback"
+                        >
+                          {errors.variationValue}
+                        </div>
+                      )}
+
+                      {formData.variation ? (
+                        optionsVariationValue &&
+                        optionsVariationValue.length > 0 ? (
+                          <>
+                            <option value="">Select your value</option>
+                            {optionsVariationValue.map((option) => (
+                              <option key={option.id} value={option.id}>
+                                {option.valueValid}
+                              </option>
+                            ))}
+                          </>
+                        ) : (
+                          <option value="">
+                            Don't have any value in variant
+                          </option>
+                        )
+                      ) : (
+                        <option value="0">Select variant first</option>
+                      )}
+                    </select>
+                    {errors.variationValue && (
+                      <div
+                        id="validationServerBrandFeedback"
+                        className="invalid-feedback"
+                      >
+                        {errors.variationValue}
+                      </div>
+                    )}
+                  </div>
+                  <div className="col-md-4">
+                    <label>Price</label>
+                    <input
+                      type="text"
+                      className={
+                        errors.sellingPrice
+                          ? "form-control is-invalid"
+                          : "form-control"
+                      }
+                      id="sellingPrice"
+                      name="sellingPrice"
+                      value={formData.sellingPrice}
+                      onChange={handleChange}
+                    />
+                    {errors.sellingPrice && (
+                      <div
+                        id="validationServerBrandFeedback"
+                        className="invalid-feedback"
+                      >
+                        {errors.sellingPrice}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="row">
+                  <div className="col-md-6">
+                    <label>Stock</label>
+                    <input
+                      type="text"
+                      className={
+                        errors.stock
+                          ? "form-control is-invalid"
+                          : "form-control"
+                      }
+                      id="stock"
+                      name="stock"
+                      value={formData.stock}
+                      onChange={handleChange}
+                    />
+                    {errors.stock && (
+                      <div
+                        id="validationServerBrandFeedback"
+                        className="invalid-feedback"
+                      >
+                        {errors.stock}
+                      </div>
+                    )}
+                  </div>
+                  <div className="col-md-6">
+                    <label>Status</label>
+                    <select
+                      id="status"
+                      className={
+                        errors.status
+                          ? "form-control is-invalid"
+                          : "form-control"
+                      }
+                      onChange={handleChange}
+                      name="status"
+                      value={formData.status}
+                    >
+                      <option value="stock">Stock</option>
+                      <option value="out_stock">Out Stock</option>
+                    </select>
+                    {errors.status && (
+                      <div
+                        id="validationServerBrandFeedback"
+                        className="invalid-feedback"
+                      >
+                        {errors.status}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <button className="btn mt-3 btn-success">Add</button> */}
+              {formDataList.map((formData, index) => (
+                <div className="variantContainer" key={index}>
+                  <div className="row">
+                    <div className="col-md-4">
+                      <label>Variation</label>
+                      <select
+                        id="variation"
+                        className={
+                          errors.variants && errors.variants[index]?.variation
+                            ? "form-control is-invalid"
+                            : "form-control"
+                        }
+                        onChange={(e) => handleChangeVariant(index, e)}
+                        name="variation"
+                        value={formData.variation}
+                      >
+                        <option value="">Select your variant</option>
+                        {optionsVariation &&
+                          optionsVariation.length > 0 &&
+                          optionsVariation.map((option) => (
+                            <option key={option.id} value={option.id}>
+                              {option.variationName}
+                            </option>
+                          ))}
+                      </select>
+                      {errors.variants && errors.variants[index]?.variation && (
+                        <div className="invalid-feedback">
+                          {errors.variants[index].variation}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="col-md-4">
+                      <label>Variation Value</label>
+                      <input
+                        type="text"
+                        className={
+                          errors.variants &&
+                          errors.variants[index]?.variationValue
+                            ? "form-control is-invalid"
+                            : "form-control"
+                        }
+                        id="variationValue"
+                        name="variationValue"
+                        value={formData.variationValue}
+                        onChange={(e) => handleChangeVariant(index, e)}
+                      />
+                      {errors.variants &&
+                        errors.variants[index]?.variationValue && (
+                          <div className="invalid-feedback">
+                            {errors.variants[index].variationValue}
+                          </div>
+                        )}
+                    </div>
+                    <div className="col-md-4">
+                      <label>Price</label>
+                      <input
+                        type="text"
+                        className={
+                          errors.variants &&
+                          errors.variants[index]?.sellingPrice
+                            ? "form-control is-invalid"
+                            : "form-control"
+                        }
+                        id="sellingPrice"
+                        name="sellingPrice"
+                        value={formData.sellingPrice}
+                        onChange={(e) => handleChangeVariant(index, e)}
+                      />
+                      {errors.variants &&
+                        errors.variants[index]?.sellingPrice && (
+                          <div className="invalid-feedback">
+                            {errors.variants[index].sellingPrice}
+                          </div>
+                        )}
+                    </div>
+                  </div>
+
+                  <div className="row">
+                    <div className="col-md-6">
+                      <label>Stock</label>
+                      <input
+                        type="text"
+                        className={
+                          errors.variants && errors.variants[index]?.stock
+                            ? "form-control is-invalid"
+                            : "form-control"
+                        }
+                        id="stock"
+                        name="stock"
+                        value={formData.stock}
+                        onChange={(e) => handleChangeVariant(index, e)}
+                      />
+                      {errors.variants && errors.variants[index]?.stock && (
+                        <div className="invalid-feedback">
+                          {errors.variants[index].stock}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="col-md-6">
+                      <label>Status</label>
+                      <select
+                        id="status"
+                        className={
+                          errors.variants && errors.variants[index]?.status
+                            ? "form-control is-invalid"
+                            : "form-control"
+                        }
+                        onChange={(e) => handleChangeVariant(index, e)}
+                        name="status"
+                        value={formData.status}
+                      >
+                        <option value="stock">Stock</option>
+                        <option value="out_stock">Out Stock</option>
+                      </select>
+                      {errors.variants && errors.variants[index]?.status && (
+                        <div className="invalid-feedback">
+                          {errors.variants[index].status}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              <button
+                className="btn mt-3 btn-success"
+                onClick={addVariantContainer}
+              >
+                Add
+              </button>
+              <button className="btn mt-3 btn-success" onClick={Log}>
+                Log
+              </button>
               <div className="form-group imageInput">
                 <label htmlFor="images">
                   <FileUploadIcon />
@@ -403,9 +687,7 @@ const AddProduct = () => {
                 </div>
               </div>
               <button
-                className={
-                  "btn mt-3" + (isEdit ? " btn-success" : " btn-primary")
-                }
+                className={"btn" + (isEdit ? " btn-success" : " btn-primary")}
                 onClick={handleAdd}
               >
                 {isEdit ? "Edit" : "Submit"}

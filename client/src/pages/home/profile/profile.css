@@ -45,3 +45,17 @@
   background-color: #000;
   color: #fff;
 }
+.addressSection {
+  margin: 12px auto;
+}
+.addressSection > p {
+  margin: 0;
+}
+.addressSection > p > button {
+  border: none;
+  background: transparent;
+  outline: none;
+}
+.addressSection > p > button:hover {
+  color: #1976d2;
+}

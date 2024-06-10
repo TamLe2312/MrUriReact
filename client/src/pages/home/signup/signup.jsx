@@ -12,7 +12,6 @@ import { useState } from "react";
 import { toast } from "sonner";
 import Validation from "../../../components/validation/validation";
 import * as request from "../../../utilities/request";
-
 // TODO remove, this demo shouldn't need to reset the theme.
 const defaultTheme = createTheme();
 

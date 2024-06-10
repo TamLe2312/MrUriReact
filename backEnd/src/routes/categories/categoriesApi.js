@@ -11,11 +11,13 @@ const {
   relatedCategories,
   relatedCategoriesDetail,
   categoriesProductView,
+  getProductCategories,
 } = require("../../controller/categories/categories");
 
 const Router = express.Router();
 
 Router.get("/", getCategories);
+Router.get("/productCategories", getProductCategories);
 Router.post("/add", upload.none(), addCategory);
 Router.get("/parent-categories", getParentCategories);
 Router.delete("/delete/:id", deleteCategory);

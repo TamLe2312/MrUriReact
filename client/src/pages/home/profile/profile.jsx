@@ -5,10 +5,13 @@ import * as request from "../../../utilities/request";
 import { UserContext } from "../../../context/userProvider";
 import { toast } from "sonner";
 import Validation from "../../../components/validation/validation";
+import MyModal from "../../../components/modal/modal";
+import AddressForm from "./addressForm";
 
 const Profile = () => {
   const [mode, setMode] = useState("information");
   const [address, setAddress] = useState();
+  const [modalAddress, setModalAddress] = useState(false);
   const [errors, setErrors] = useState({});
   const [edit, setEdit] = useState(false);
   const [rowId, setRowId] = useState(null);
@@ -19,6 +22,8 @@ const Profile = () => {
     username: "",
     name: "",
     email: "",
+    phoneNumber: "",
+    address: "",
   });
   const [formDataPassword, setFormDataPassword] = useState({
     currentPassword: "",
@@ -237,6 +242,8 @@ const Profile = () => {
         username: res.data.results[0].username,
         email: res.data.results[0].email,
         name: res.data.results[0].name || "None",
+        address: res.data.results[0].address,
+        phoneNumber: res.data.results[0].phone_number || "None",
       });
     } catch (err) {
       console.error(err);
@@ -258,15 +265,37 @@ const Profile = () => {
       console.error(err);
     }
   };
-
+  const fetchGoogle = async (localId) => {
+    try {
+      const res = await request.postRequest("users/verifyGoogle", {
+        localId,
+      });
+      if (res.status === 200) {
+        /* console.log(res);
+        setUser(res.data.results); */
+        handleSet(res.data.results);
+        fetchInform(res.data.results);
+      }
+    } catch (err) {
+      if (err.response.status === 500) {
+        localStorage.removeItem("isGoogle");
+      }
+      console.error(err);
+    }
+  };
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      fetchUser(token);
+    const isGoogle = localStorage.getItem("isGoogle");
+    if (isGoogle) {
+      fetchGoogle(isGoogle);
     } else {
-      handleSet(null);
-      toast.error("You need to sign in first");
-      navigate("/sign-in");
+      const token = localStorage.getItem("token");
+      if (token) {
+        fetchUser(token);
+      } else {
+        handleSet(null);
+        toast.error("You need to sign in first");
+        navigate("/sign-in");
+      }
     }
   }, []);
 
@@ -338,7 +367,7 @@ const Profile = () => {
                   </div>
                 </div>
                 <div className="row">
-                  <div className="col-md-12">
+                  <div className="col-md-6">
                     <label>Email</label>
                     <input
                       type="email"
@@ -357,6 +386,76 @@ const Profile = () => {
                         className="invalid-feedback"
                       >
                         {errors.email}
+                      </div>
+                    )}
+                  </div>
+                  <div className="col-md-6">
+                    <label>Phone</label>
+                    <input
+                      type="text"
+                      className={
+                        errors.phoneNumber
+                          ? "form-control is-invalid"
+                          : "form-control"
+                      }
+                      value={formDataInform.phoneNumber}
+                      onChange={handleChangeInform}
+                      name="phoneNumber"
+                    />
+                    {errors.phoneNumber && (
+                      <div
+                        id="validationServerBrandFeedback"
+                        className="invalid-feedback"
+                      >
+                        {errors.phoneNumber}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="row">
+                  <div className="col-md-12">
+                    {formDataInform.address ? (
+                      <>
+                        <label>Address</label>
+                        <input
+                          type="text"
+                          className={
+                            errors.address
+                              ? "form-control is-invalid"
+                              : "form-control"
+                          }
+                          value={formDataInform.address}
+                          onChange={handleChangeInform}
+                          name="address"
+                        />
+                        {errors.address && (
+                          <div
+                            id="validationServerBrandFeedback"
+                            className="invalid-feedback"
+                          >
+                            {errors.address}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="addressSection">
+                        <p>
+                          No address?{" "}
+                          <button onClick={() => setModalAddress(true)}>
+                            Add now
+                          </button>
+                        </p>
+                        <MyModal
+                          text={"Address"}
+                          show={modalAddress}
+                          onHide={() => setModalAddress(false)}
+                          size={"xl"}
+                          childrens={
+                            user && user.id ? (
+                              <AddressForm userId={user.id} />
+                            ) : null
+                          }
+                        />
                       </div>
                     )}
                   </div>

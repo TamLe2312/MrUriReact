@@ -1,3 +1,4 @@
+import "./variation.css";
 import { Container } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import Paper from "@mui/material/Paper";
@@ -8,27 +9,23 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TablePagination from "@mui/material/TablePagination";
 import TableRow from "@mui/material/TableRow";
-import "./users.css";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import * as request from "../../../utilities/request";
-import UserSkeleton from "../../../components/skeleton/userSkeleton/userSkeleton";
+import SkeletonRow3 from "../../../components/skeleton/skeletonRow3/skeletonRow3";
 
-const Users = () => {
+const Variation = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [users, setUsers] = useState();
+  const [variations, setVariations] = useState();
   const [total, setTotal] = useState(0);
-  const [usersNum, setUsersNum] = useState();
+  const [errors, setErrors] = useState({});
+  const [variationNum, setVariationsNum] = useState();
   const [isLoading, setIsLoading] = useState(true);
   const [isEdit, setIsEdit] = useState(false);
   const [formData, setFormData] = useState({
-    username: "",
-    email: "",
-    role: "user",
-    password: "",
+    name: "",
   });
-
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
   };
@@ -43,24 +40,53 @@ const Users = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleUser = async () => {
+  const handleDelete = async (id) => {
+    try {
+      const res = await request.deleteRequest(`variation/delete/${id}`);
+      // console.log(res);
+      setIsLoading(true);
+      if (res.status === 200) {
+        toast.success(res.data.message);
+        fetchVariation();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleEdit = async (variation) => {
+    setIsLoading(true);
+    setIsEdit(true);
+    try {
+      const res = await request.getRequest(`variation/getById/${variation.id}`);
+      if (res.status === 200) {
+        const variationData = res.data.results[0];
+        setFormData({
+          name: variationData.name,
+          id: variationData.id,
+        });
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSubmit = async () => {
     setIsLoading(true);
     if (isEdit) {
       try {
-        const res = await request.postRequest(`users/edit`, {
-          username: formData.username,
-          email: formData.email,
-          role: formData.role,
+        const res = await request.postRequest(`variation/edit`, {
+          name: formData.name,
+          id: formData.id,
         });
         // console.log(res);
         if (res.status === 200) {
           setFormData({
-            username: "",
-            email: "",
-            password: "",
-            role: "user",
+            name: "",
           });
-          fetchUser();
+          fetchVariation();
           setIsEdit(false);
           toast.success(res.data.message);
         }
@@ -73,15 +99,15 @@ const Users = () => {
       }
     } else {
       try {
-        const res = await request.postRequest(`users/add`, {
-          username: formData.username,
-          email: formData.email,
-          password: formData.password,
-          role: formData.username,
+        const res = await request.postRequest(`variation/add`, {
+          name: formData.name,
         });
         if (res.status === 200) {
+          setFormData({
+            name: "",
+          });
           toast.success(res.data.message);
-          fetchUser();
+          fetchVariation();
         }
       } catch (err) {
         if (err.response.status === 400) {
@@ -90,59 +116,26 @@ const Users = () => {
       }
     }
   };
-
-  const handleDelete = async (id) => {
-    try {
-      const res = await request.deleteRequest(`users/delete/${id}`);
-      // console.log(res);
-      if (res.status === 200) {
-        toast.success(res.data.message);
-        fetchUser();
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleEdit = async (user) => {
-    setIsLoading(true);
-    setIsEdit(true);
-    try {
-      const res = await request.getRequest(`users/user/${user.id}`);
-      if (res.status === 200) {
-        const userData = res.data.results[0];
-        setFormData({
-          username: userData.username,
-          email: userData.email,
-          role: userData.role,
-        });
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
   useEffect(() => {
-    if (users && users.length > 0) {
+    if (variations && variations.length > 0) {
       setIsLoading(true);
       const lastIndex = (page + 1) * rowsPerPage;
       const firstIndex = lastIndex - rowsPerPage;
-      const records = users.slice(firstIndex, lastIndex);
-      setUsersNum(records);
+      const records = variations.slice(firstIndex, lastIndex);
+      setVariationsNum(records);
       setIsLoading(false);
     }
   }, [page, rowsPerPage]);
-  const fetchUser = async () => {
+  const fetchVariation = async () => {
     try {
-      const res = await request.getRequest(`users`);
+      const res = await request.getRequest(`variation`);
       if (res.data) {
-        setUsers(res.data.results);
+        setVariations(res.data.results);
         setTotal(res.data.results.length);
         const lastIndex = (page + 1) * rowsPerPage;
         const firstIndex = lastIndex - rowsPerPage;
         const records = res.data.results.slice(firstIndex, lastIndex);
-        setUsersNum(records);
+        setVariationsNum(records);
         setIsLoading(false);
       }
     } catch (err) {
@@ -151,12 +144,11 @@ const Users = () => {
   };
 
   useEffect(() => {
-    fetchUser();
+    fetchVariation();
   }, []);
-
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <p>Users</p>
+      <p>Variation</p>
       <Grid container spacing={2}>
         <Grid item xs={4}>
           <Paper
@@ -165,58 +157,29 @@ const Users = () => {
             }}
           >
             <div className="form-group">
-              <label>Username</label>
+              <label>Name</label>
               <input
                 type="text"
                 className="form-control"
-                id="username"
-                name="username"
-                value={formData.username}
+                id="name"
+                name="name"
+                value={formData.name}
                 onChange={handleChange}
               />
-            </div>
-            <div className="form-group">
-              <label>Email</label>
-              <input
-                type="email"
-                className="form-control"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-              />
-            </div>
-            {!isEdit && (
-              <div className="form-group">
-                <label>Password</label>
-                <input
-                  type="password"
-                  className="form-control"
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                />
-              </div>
-            )}
-            <div className="form-group">
-              <label>Role</label>
-              <select
-                id="role"
-                className="form-control"
-                onChange={handleChange}
-                name="role"
-                value={formData.role}
-              >
-                <option value="user">User</option>
-                <option value="admin">Admin</option>
-              </select>
+              {errors.name && (
+                <div
+                  id="validationServerBrandFeedback"
+                  className="invalid-feedback"
+                >
+                  {errors.name}
+                </div>
+              )}
             </div>
             <button
               className={
                 "btn mt-3" + (isEdit ? " btn-success" : " btn-primary")
               }
-              onClick={handleUser}
+              onClick={handleSubmit}
             >
               {isEdit ? "Edit" : "Submit"}
             </button>
@@ -228,9 +191,8 @@ const Users = () => {
               <Table stickyHeader aria-label="sticky table">
                 <TableHead>
                   <TableRow>
-                    <TableCell align="left">Username</TableCell>
-                    <TableCell align="left">Email</TableCell>
-                    <TableCell align="left">Role</TableCell>
+                    <TableCell align="left">Id</TableCell>
+                    <TableCell align="left">Name</TableCell>
                     <TableCell align="left">Action</TableCell>
                   </TableRow>
                 </TableHead>
@@ -238,25 +200,24 @@ const Users = () => {
                   {isLoading
                     ? Array(rowsPerPage)
                         .fill(0)
-                        .map((_, index) => <UserSkeleton key={index} />)
-                    : usersNum &&
-                      usersNum.map((user) => {
+                        .map((_, index) => <SkeletonRow3 key={index} />)
+                    : variationNum &&
+                      variationNum.map((variation) => {
                         return (
-                          <TableRow key={user.id}>
-                            <TableCell>{user.username}</TableCell>
-                            <TableCell>{user.email}</TableCell>
-                            <TableCell>{user.role}</TableCell>
+                          <TableRow key={variation.id}>
+                            <TableCell>{variation.id}</TableCell>
+                            <TableCell>{variation.variationName}</TableCell>
                             <TableCell>
                               <div className="handleButtonAction">
                                 <button
                                   className="btn btn-danger"
-                                  onClick={() => handleDelete(user.id)}
+                                  onClick={() => handleDelete(variation.id)}
                                 >
                                   Delete
                                 </button>
                                 <button
                                   className="btn btn-primary"
-                                  onClick={() => handleEdit(user)}
+                                  onClick={() => handleEdit(variation)}
                                 >
                                   Edit
                                 </button>
@@ -268,7 +229,7 @@ const Users = () => {
                 </TableBody>
               </Table>
             </TableContainer>
-            {users && (
+            {variations && (
               <TablePagination
                 rowsPerPageOptions={[10, 25, 100]}
                 component="div"
@@ -286,4 +247,4 @@ const Users = () => {
   );
 };
 
-export default Users;
+export default Variation;

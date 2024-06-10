@@ -35,142 +35,238 @@ const getCarts = (req, res) => {
 const getCartById = (req, res) => {
   const id = req.params.id;
   if (id) {
-    const sql =
-      "SELECT products.product_name,products.selling_price,carts.quantity,carts.image,carts.id,carts.product_id FROM carts INNER JOIN products on products.id = carts.product_id WHERE user_id = (?)";
-    connection.query(sql, [id], (err, data) => {
-      if (err) {
-        return res.status(500).json({ message: "Lỗi máy chủ" });
+    connection.query(
+      `SELECT 
+    products.product_name,
+    products.id as product_id,
+    carts.quantity,
+    carts.image,
+    carts.id,
+    productDetail.id as product_detail_id,
+    productDetail.selling_price,
+    variation.name AS variation_name,
+    variationOption.value AS variation_value 
+FROM carts
+INNER JOIN products ON carts.product_id = products.id
+INNER JOIN productDetail ON carts.product_detail_id = productDetail.id
+INNER JOIN productConfiguration ON productDetail.id = productConfiguration.product_detail_id
+INNER JOIN variationOption ON productConfiguration.variation_option_id = variationOption.id
+INNER JOIN variation ON variationOption.variation_id = variation.id
+WHERE carts.user_id = (?)
+ORDER BY carts.id, productDetail.id, variation.name
+      `,
+      [id],
+      (err, data) => {
+        if (err) {
+          console.log(err);
+          return res.status(500).json({ message: "Lỗi máy chủ" });
+        }
+        if (data.length > 0) {
+          const transformedData = data.map((item) => {
+            const productName = item.product_name
+              .replace(/_/g, " ")
+              .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+            const variationName = item.variation_name
+              .replace(/_/g, " ")
+              .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+            const variationValue = item.variation_value
+              .replace(/_/g, " ")
+              .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+            return {
+              ...item,
+              product_name: productName,
+              variation_name: variationName,
+              variation_value: variationValue,
+            };
+          });
+          return res
+            .status(200)
+            .json({ message: "Thành công", results: transformedData });
+        }
       }
-      if (data.length > 0) {
-        const transformedData = data.map((item) => {
-          const productName = item.product_name
-            .replace(/_/g, " ")
-            .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
-          return {
-            ...item,
-            product_name: productName,
-          };
-        });
-        return res
-          .status(200)
-          .json({ message: "Thành công", results: transformedData });
-      }
-      return res.status(200).json({ message: "Thành công", results: [] });
-    });
+    );
   }
 };
 
 const addCart = (req, res) => {
   const { cart } = req.body;
-  const sql = `SELECT * FROM carts WHERE product_id = ? AND user_id = ?`;
-  connection.query(sql, [cart.product_id, cart.user_id], (err, data) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ message: "Lỗi máy chủ" });
-    }
-    if (data.length > 0) {
-      const newQuantity = data[0].quantity + cart.quantity;
-      connection.query(
-        `SELECT stock FROM products WHERE id = (?)`,
-        [cart.product_id],
-        (err, results) => {
-          if (err) {
-            console.error(err);
-            return res.status(500).json({ message: "Lỗi máy chủ" });
-          }
-          const productStock = results[0].stock;
-          if (newQuantity > productStock) {
-            return res.status(400).json({
-              message: "Cant add over stock quantity product",
-            });
-          } else {
-            const updateSql = `UPDATE carts SET quantity = ? WHERE product_id = ? AND user_id = ?`;
-            connection.query(
-              updateSql,
-              [parseInt(newQuantity), cart.product_id, cart.user_id],
-              (err, data) => {
-                if (err) {
-                  console.error(err);
-                  return res.status(500).json({ message: "Lỗi máy chủ" });
-                }
-                const getSql = `SELECT products.product_name,products.selling_price,carts.quantity,carts.image,carts.id,carts.product_id FROM carts INNER JOIN products on products.id = carts.product_id `;
-                connection.query(getSql, (err, data) => {
-                  if (err) {
-                    console.error(err);
-                    return res.status(500).json({ message: "Lỗi máy chủ" });
-                  }
-                  const transformedData = data.map((item) => {
-                    const productName = item.product_name
-                      .replace(/_/g, " ")
-                      .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
-                    return {
-                      ...item,
-                      product_name: productName,
-                    };
-                  });
-                  return res.status(200).json({
-                    message: "Add Cart Success",
-                    results: transformedData,
-                  });
-                });
-              }
-            );
-          }
-        }
-      );
-    } else {
-      const insertSql = `INSERT INTO carts (user_id, product_id, quantity, image) VALUES (?, ?, ?, ?)`;
-      connection.query(
-        insertSql,
-        [cart.user_id, cart.product_id, cart.quantity, cart.image],
-        (err, result) => {
-          if (err) {
-            console.error(err);
-            return res.status(500).json({ message: "Lỗi máy chủ" });
-          }
-          const getSql = `SELECT products.product_name,products.selling_price,carts.quantity,carts.image,carts.id FROM carts INNER JOIN products on products.id = carts.product_id `;
-          connection.query(getSql, (err, data) => {
+  const sql = `SELECT * FROM carts WHERE product_id = ? AND user_id = ? AND product_detail_id = ?`;
+  connection.query(
+    sql,
+    [cart.product_id, cart.user_id, cart.product_detail_id],
+    (err, data) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ message: "Lỗi máy chủ" });
+      }
+      if (data.length > 0) {
+        const newQuantity = data[0].quantity + cart.quantity;
+        connection.query(
+          `SELECT stock FROM productDetail WHERE id = (?) AND product_id = (?)`,
+          [cart.product_detail_id, cart.product_id],
+          (err, results) => {
             if (err) {
               console.error(err);
               return res.status(500).json({ message: "Lỗi máy chủ" });
             }
-            const transformedData = data.map((item) => {
-              const productName = item.product_name
-                .replace(/_/g, " ")
-                .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
-              return {
-                ...item,
-                product_name: productName,
-              };
+            const productStock = results[0].stock;
+            if (newQuantity > productStock) {
+              return res.status(400).json({
+                message: "Cant add over stock quantity product",
+              });
+            } else {
+              const updateSql = `UPDATE carts SET quantity = ? WHERE product_id = ? AND user_id = ?  AND product_detail_id = ?`;
+              connection.query(
+                updateSql,
+                [
+                  parseInt(newQuantity),
+                  cart.product_id,
+                  cart.user_id,
+                  cart.product_detail_id,
+                ],
+                (err, data) => {
+                  if (err) {
+                    console.error(err);
+                    return res.status(500).json({ message: "Lỗi máy chủ" });
+                  }
+                  const getSql = `SELECT 
+    products.product_name,
+    carts.quantity,
+    carts.image,
+    carts.id,
+    productDetail.selling_price,
+    variation.name AS variation_name,
+    variationOption.value AS variation_value 
+FROM carts
+INNER JOIN products ON carts.product_id = products.id
+INNER JOIN productDetail ON carts.product_detail_id = productDetail.id
+INNER JOIN productConfiguration ON productDetail.id = productConfiguration.product_detail_id
+INNER JOIN variationOption ON productConfiguration.variation_option_id = variationOption.id
+INNER JOIN variation ON variationOption.variation_id = variation.id
+WHERE carts.user_id = (?)
+ORDER BY carts.id, productDetail.id, variation.name`;
+                  connection.query(getSql, [cart.user_id], (err, data) => {
+                    if (err) {
+                      console.error(err);
+                      return res.status(500).json({ message: "Lỗi máy chủ" });
+                    }
+                    const transformedData = data.map((item) => {
+                      const productName = item.product_name
+                        .replace(/_/g, " ")
+                        .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+                      const variationName = item.variation_name
+                        .replace(/_/g, " ")
+                        .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+                      const variationValue = item.variation_value
+                        .replace(/_/g, " ")
+                        .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+                      return {
+                        ...item,
+                        product_name: productName,
+                        variation_name: variationName,
+                        variation_value: variationValue,
+                      };
+                    });
+                    return res.status(200).json({
+                      message: "Add Cart Success",
+                      results: transformedData,
+                    });
+                  });
+                }
+              );
+            }
+          }
+        );
+      } else {
+        const insertSql = `INSERT INTO carts (user_id, product_id,product_detail_id, quantity, image) VALUES (?, ?, ?,?, ?)`;
+        connection.query(
+          insertSql,
+          [
+            cart.user_id,
+            cart.product_id,
+            cart.product_detail_id,
+            cart.quantity,
+            cart.image,
+          ],
+          (err, result) => {
+            if (err) {
+              console.error(err);
+              return res.status(500).json({ message: "Lỗi máy chủ" });
+            }
+            const getSql = `SELECT 
+    products.product_name,
+    carts.quantity,
+    carts.image,
+    carts.id,
+    productDetail.selling_price,
+    variation.name AS variation_name,
+    variationOption.value AS variation_value 
+FROM carts
+INNER JOIN products ON carts.product_id = products.id
+INNER JOIN productDetail ON carts.product_detail_id = productDetail.id
+INNER JOIN productConfiguration ON productDetail.id = productConfiguration.product_detail_id
+INNER JOIN variationOption ON productConfiguration.variation_option_id = variationOption.id
+INNER JOIN variation ON variationOption.variation_id = variation.id
+WHERE carts.user_id = (?)
+ORDER BY carts.id, productDetail.id, variation.name`;
+            connection.query(getSql, [cart.user_id], (err, data) => {
+              if (err) {
+                console.error(err);
+                return res.status(500).json({ message: "Lỗi máy chủ" });
+              }
+              const transformedData = data.map((item) => {
+                const productName = item.product_name
+                  .replace(/_/g, " ")
+                  .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+                return {
+                  ...item,
+                  product_name: productName,
+                };
+              });
+              return res.status(200).json({
+                message: "Add Cart Success",
+                results: transformedData,
+              });
             });
-            return res
-              .status(200)
-              .json({ message: "Add Cart Success", results: transformedData });
-          });
-        }
-      );
+          }
+        );
+      }
     }
-  });
+  );
 };
 
 const deleteCart = (req, res) => {
-  const id = req.params.id;
-  if (id) {
+  const { cart, userId } = req.body;
+  if (cart && userId) {
     const sql = `SELECT * FROM carts WHERE id = ?`;
-    connection.query(sql, [id], (err, data) => {
+    connection.query(sql, [cart], (err, data) => {
       if (err) {
         console.error(err);
         return res.status(500).json({ message: "Lỗi máy chủ" });
       }
       if (data.length > 0) {
         const deleteSql = `DELETE FROM carts where id = (?)`;
-        connection.query(deleteSql, [id], (err, data) => {
+        connection.query(deleteSql, [cart], (err, data) => {
           if (err) {
             console.error(err);
             return res.status(500).json({ message: "Lỗi máy chủ" });
           }
-          const getSql = `SELECT products.product_name,products.selling_price,carts.quantity,carts.image,carts.id,carts.product_id FROM carts INNER JOIN products on products.id = carts.product_id `;
-          connection.query(getSql, (err, data) => {
+          const getSql = `SELECT products.product_name,
+    carts.quantity,
+    carts.image,
+    carts.id,
+    productDetail.selling_price,
+    variation.name AS variation_name,
+    variationOption.value AS variation_value 
+FROM carts
+INNER JOIN products ON carts.product_id = products.id
+INNER JOIN productDetail ON carts.product_detail_id = productDetail.id
+INNER JOIN productConfiguration ON productDetail.id = productConfiguration.product_detail_id
+INNER JOIN variationOption ON productConfiguration.variation_option_id = variationOption.id
+INNER JOIN variation ON variationOption.variation_id = variation.id
+WHERE carts.user_id = (?)
+ORDER BY carts.id, productDetail.id, variation.name`;
+          connection.query(getSql, [userId], (err, data) => {
             if (err) {
               console.error(err);
               return res.status(500).json({ message: "Lỗi máy chủ" });
@@ -179,9 +275,17 @@ const deleteCart = (req, res) => {
               const productName = item.product_name
                 .replace(/_/g, " ")
                 .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+              const variationName = item.variation_name
+                .replace(/_/g, " ")
+                .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+              const variationValue = item.variation_value
+                .replace(/_/g, " ")
+                .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
               return {
                 ...item,
                 product_name: productName,
+                variation_name: variationName,
+                variation_value: variationValue,
               };
             });
             return res.status(200).json({
@@ -196,8 +300,8 @@ const deleteCart = (req, res) => {
 };
 
 const changeQuantity = (req, res) => {
-  const { user_id, cart } = req.body;
-  if (user_id && cart) {
+  const { userId, cart } = req.body;
+  if (userId && cart) {
     connection.query(
       `UPDATE carts SET quantity = (?) WHERE id = (?)`,
       [cart.quantity, cart.id],
@@ -206,8 +310,22 @@ const changeQuantity = (req, res) => {
           console.error(err);
           return res.status(500).json({ message: "Lỗi máy chủ" });
         }
-        const getSql = `SELECT products.product_name,products.selling_price,carts.quantity,carts.image,carts.id,carts.product_id FROM carts INNER JOIN products on products.id = carts.product_id `;
-        connection.query(getSql, (err, data) => {
+        const getSql = `SELECT products.product_name,
+    carts.quantity,
+    carts.image,
+    carts.id,
+    productDetail.selling_price,
+    variation.name AS variation_name,
+    variationOption.value AS variation_value 
+FROM carts
+INNER JOIN products ON carts.product_id = products.id
+INNER JOIN productDetail ON carts.product_detail_id = productDetail.id
+INNER JOIN productConfiguration ON productDetail.id = productConfiguration.product_detail_id
+INNER JOIN variationOption ON productConfiguration.variation_option_id = variationOption.id
+INNER JOIN variation ON variationOption.variation_id = variation.id
+WHERE carts.user_id = (?)
+ORDER BY carts.id, productDetail.id, variation.name`;
+        connection.query(getSql, [userId], (err, data) => {
           if (err) {
             console.error(err);
             return res.status(500).json({ message: "Lỗi máy chủ" });
@@ -216,9 +334,17 @@ const changeQuantity = (req, res) => {
             const productName = item.product_name
               .replace(/_/g, " ")
               .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+            const variationName = item.variation_name
+              .replace(/_/g, " ")
+              .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+            const variationValue = item.variation_value
+              .replace(/_/g, " ")
+              .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
             return {
               ...item,
               product_name: productName,
+              variation_name: variationName,
+              variation_value: variationValue,
             };
           });
           return res.status(200).json({
@@ -278,10 +404,11 @@ const checkOut = (req, res) => {
             productsArray.forEach((product) => {
               const parseProduct = JSON.parse(product);
               connection.query(
-                `INSERT INTO order_details (order_id,product_id,quantity,price,img) VALUES (?,?,?,?,?)`,
+                `INSERT INTO order_details (order_id,product_id,product_detail_id,quantity,price,img) VALUES (?,?,?,?,?,?)`,
                 [
                   lastId,
                   parseProduct.product_id,
+                  parseProduct.product_detail_id,
                   parseProduct.quantity,
                   parseProduct.selling_price,
                   parseProduct.image,
@@ -373,10 +500,11 @@ const checkOut = (req, res) => {
             productsArray.forEach((product) => {
               const parseProduct = JSON.parse(product);
               connection.query(
-                `INSERT INTO order_details (order_id,product_id,quantity,price,img) VALUES (?,?,?,?,?)`,
+                `INSERT INTO order_details (order_id,product_id,product_detail_id,quantity,price,img) VALUES (?,?,?,?,?,?)`,
                 [
                   lastId,
                   parseProduct.product_id,
+                  parseProduct.product_detail_id,
                   parseProduct.quantity,
                   parseProduct.selling_price,
                   parseProduct.image,

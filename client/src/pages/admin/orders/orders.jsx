@@ -113,6 +113,7 @@ const Orders = () => {
   const fetchOrders = async () => {
     try {
       const res = await request.getRequest(`orders/getAll`);
+      // console.log(res);
       if (res.status === 200) {
         // console.log(res);
         setOrders(res.data.results);

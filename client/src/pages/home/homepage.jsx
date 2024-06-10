@@ -1,5 +1,4 @@
 import "./homepage.css";
-import Fruites from "../../../public/images/hero-img-1.png";
 import { FaCarSide } from "react-icons/fa6";
 import { MdOutlineSecurity } from "react-icons/md";
 import { FaExchangeAlt, FaPhoneAlt } from "react-icons/fa";
@@ -10,13 +9,35 @@ import { useContext, useEffect, useState } from "react";
 import ProductSkeleton from "../../components/skeleton/productSkeleton/productSkeleton";
 import { UserContext } from "../../context/userProvider";
 import { APP_URL } from "../../config/env";
-import { truncateText } from "../../helper/helper";
+import { truncateText, minPrice } from "../../helper/helper";
 import { toast } from "sonner";
 import { CartContext } from "../../context/cartProvider";
 import { SocketContext } from "../../context/socketContext";
 import Slider from "../../components/slider/slider";
+import ProductCategories from "./productCategories/productCategories";
+import Carousel from "react-multi-carousel";
+import "react-multi-carousel/lib/styles.css";
+import Product from "./productCategories/product";
 
 const Homepage = () => {
+  const responsive = {
+    superLargeDesktop: {
+      breakpoint: { max: 4000, min: 1024 },
+      items: 4,
+    },
+    desktop: {
+      breakpoint: { max: 1024, min: 800 },
+      items: 4,
+    },
+    tablet: {
+      breakpoint: { max: 800, min: 464 },
+      items: 3,
+    },
+    mobile: {
+      breakpoint: { max: 464, min: 0 },
+      items: 2,
+    },
+  };
   const [products, setProducts] = useState();
   const { socket } = useContext(SocketContext);
   const [isLoading, setIsLoading] = useState(true);
@@ -49,6 +70,7 @@ const Homepage = () => {
       const productsArray = res.data.results.map((product) => ({
         ...product,
         images: product.images.split(","),
+        selling_price: minPrice(product.selling_price.split(",")),
         product_name: truncateText(product.product_name, 15),
       }));
       // console.log(productsArray);
@@ -69,6 +91,22 @@ const Homepage = () => {
     } catch (err) {
       if (err.response.status === 500) {
         localStorage.removeItem("token");
+      }
+      console.error(err);
+    }
+  };
+  const fetchGoogle = async (localId) => {
+    try {
+      const res = await request.postRequest("users/verifyGoogle", { localId });
+      // console.log(localId);
+      if (res.status === 200) {
+        /* console.log(res);
+        setUser(res.data.results); */
+        handleSet(res.data.results);
+      }
+    } catch (err) {
+      if (err.response.status === 500) {
+        localStorage.removeItem("isGoogle");
       }
       console.error(err);
     }
@@ -94,11 +132,16 @@ const Homepage = () => {
 
   useEffect(() => {
     fetchProducts();
-    const token = localStorage.getItem("token");
-    if (token) {
-      fetchUser(token);
+    const isGoogle = localStorage.getItem("isGoogle");
+    if (isGoogle) {
+      fetchGoogle(isGoogle);
     } else {
-      handleSet(null);
+      const token = localStorage.getItem("token");
+      if (token) {
+        fetchUser(token);
+      } else {
+        handleSet(null);
+      }
     }
   }, []);
   return (
@@ -110,7 +153,7 @@ const Homepage = () => {
       {/* <!-- Hero End --> */}
 
       {/* // <!-- Featurs Section Start --> */}
-      <div className="container-fluid featurs py-5">
+      <div className="container-fluid featurs py-3">
         <div className="container py-5">
           <div className="row g-4">
             <div className="col-md-6 col-lg-3">
@@ -163,19 +206,35 @@ const Homepage = () => {
       {/* // <!-- Featurs Section End --> */}
 
       {/* // <!-- Fruits Shop Start--> */}
-      <div className="container-fluid fruite py-5">
-        <div className="container py-5">
+      <div className="container-fluid fruite py-2">
+        <div className="container">
           <div className="tab-className text-center">
             <div className="row g-4">
               <div className="col-lg-4 text-start">
-                <h1>Our Organic Products</h1>
+                <h1>Featured Products</h1>
               </div>
             </div>
             <div className="tab-content productsContainer">
               <div id="tab-1" className="tab-pane fade show p-0 active">
                 <div className="container">
-                  <div className="row">
-                    {isLoading
+                  {isLoading
+                    ? "Loading..."
+                    : products.length > 0 && (
+                        <Carousel
+                          responsive={responsive}
+                          showDots={products.length > 4}
+                        >
+                          {products.length > 0 ? (
+                            products.map((item, index) => (
+                              <Product key={index} item={item} />
+                            ))
+                          ) : (
+                            <Product />
+                          )}
+                        </Carousel>
+                      )}
+
+                  {/* {isLoading
                       ? Array(8)
                           .fill(0)
                           .map((_, i) => (
@@ -238,14 +297,14 @@ const Homepage = () => {
                               </div>
                             </div>
                           );
-                        })}
-                  </div>
+                        })} */}
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+      <ProductCategories />
       {/* <!-- Fruits Shop End--> */}
     </>
   );

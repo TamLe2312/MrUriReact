@@ -31,15 +31,23 @@ const Validation = (value, type) => {
     if (!value.productDescription) {
       errors.productDescription = "Product description cannot be empty";
     }
+    if (!value.selectedCategories.length > 0) {
+      errors.selectedCategories = "Categories cannot be empty";
+    }
+  } else if (type === "variation") {
+    if (!value.variation) {
+      errors.variation = "Variantion cannot be empty";
+    }
+    if (!value.variationValue) {
+      errors.variationValue = "Variantion value cannot be empty";
+    }
+    if (!value.status) {
+      errors.status = "Status cannot be empty";
+    }
     if (!value.stock) {
       errors.stock = "Stock cannot be empty";
     } else if (isNaN(value.stock)) {
       errors.stock = "Stock must be a number";
-    }
-    if (!value.importedPrice) {
-      errors.importedPrice = "Imported price cannot be empty";
-    } else if (isNaN(value.importedPrice)) {
-      errors.importedPrice = "Imported price must be a number";
     }
     if (!value.sellingPrice) {
       errors.sellingPrice = "Selling price cannot be empty";
@@ -159,6 +167,22 @@ const Validation = (value, type) => {
     }
     if (!value.path) {
       errors.path = "Path cannot be empty";
+    }
+  } else if (type === "addressForm") {
+    if (!value.phoneNumber) {
+      errors.phoneNumber = "Phone number cannot be empty";
+    }
+    if (!value.address) {
+      errors.address = "Address cannot be empty";
+    }
+    if (!value.provinces) {
+      errors.provinces = "Province cannot be empty";
+    }
+    if (!value.districts) {
+      errors.districts = "District cannot be empty";
+    }
+    if (!value.wards) {
+      errors.wards = "Ward cannot be empty";
     }
   }
 

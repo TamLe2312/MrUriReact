@@ -14,6 +14,8 @@ const {
   editImage,
   deleteProduct,
   searchProducts,
+  viewProductsByCategory,
+  featureProduct,
 } = require("../../controller/products/products");
 
 const Router = express.Router();
@@ -33,11 +35,13 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 Router.get("/", getProducts);
-Router.get("/product/:id", getProductById);
+Router.post("/product/:id", getProductById);
 Router.get("/relatedProducts/:id", relatedProducts);
 Router.get("/relatedProductsDetail/:id", relatedProductsDetail);
-Router.get("/view/:id", productViewById);
+Router.get("/viewByCategory/:id", viewProductsByCategory);
 Router.get("/view", viewProducts);
+Router.post("/featureProduct", featureProduct);
+Router.get("/view/:id", productViewById);
 Router.get("/search/:value", searchProducts);
 Router.get("/viewDetail/:id", viewDetail);
 Router.get("/viewDetailImgs/:id", viewDetailImgs);

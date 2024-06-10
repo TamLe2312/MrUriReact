@@ -18,6 +18,9 @@ const {
   deleteSlide,
   getSlideById,
   editSlide,
+  handleLoginGoogle,
+  verifyGoogle,
+  addressForm,
 } = require("../../controller/users/users");
 const Router = express.Router();
 
@@ -36,6 +39,9 @@ const upload = multer({ storage: storage });
 Router.get("/", getUsers);
 Router.get("/user/:id", getUserById);
 Router.get("/slider", getSlide);
+Router.post("/google", handleLoginGoogle);
+Router.post("/verifyGoogle", verifyGoogle);
+Router.post("/address", upload.none(), addressForm);
 Router.get("/getSlide/:id", getSlideById);
 Router.post("/edit/slide", upload.single("image"), editSlide);
 Router.delete("/deleteSlide/:id", deleteSlide);

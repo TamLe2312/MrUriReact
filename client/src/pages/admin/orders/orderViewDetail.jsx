@@ -11,19 +11,23 @@ import { useContext, useEffect, useState } from "react";
 import * as request from "../../../utilities/request";
 import { UserContext } from "../../../context/userProvider";
 import { APP_URL } from "../../../config/env";
+import { formatNumber } from "../../../helper/helper";
 
 const OrderViewDetail = (props) => {
   const [order, setOrder] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const { id } = props;
   const { user } = useContext(UserContext);
+  const format = (price) => {
+    return formatNumber(parseInt(price));
+  };
   const fetchOrder = async () => {
     try {
       const res = await request.postRequest("orders/getOrderById", {
         userId: user.id,
         id: id,
       });
-      console.log(res);
+      // console.log(res);
       if (res.status === 200) {
         setOrder(res.data.results[0]);
         setIsLoading(false);
@@ -123,7 +127,7 @@ const OrderViewDetail = (props) => {
                     id="total"
                     name="total"
                     readOnly
-                    value={order.total}
+                    value={format(order.total)}
                   />
                 </div>
               </div>
@@ -171,8 +175,14 @@ const OrderViewDetail = (props) => {
                     order.order_details.map((item, index) => {
                       return (
                         <TableRow key={index}>
-                          <TableCell>{item.product_name}</TableCell>
-                          <TableCell>{item.price}</TableCell>
+                          <TableCell>
+                            {item.product_name}
+                            <div className="variantTitle">
+                              {item.variation_name}
+                              <strong>{item.variation_value}</strong>
+                            </div>
+                          </TableCell>
+                          <TableCell>{format(item.price)}</TableCell>
                           <TableCell>{item.quantity}</TableCell>
                           <TableCell>
                             <img

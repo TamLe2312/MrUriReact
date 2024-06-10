@@ -1,4 +1,4 @@
-import { Link, useParams, useNavigate } from "react-router-dom";
+import { NavLink, Link, useParams, useNavigate } from "react-router-dom";
 import "./shop.css";
 import * as request from "../../../utilities/request";
 import SearchIcon from "@mui/icons-material/Search";
@@ -9,6 +9,7 @@ import { UserContext } from "../../../context/userProvider";
 import { CartContext } from "../../../context/cartProvider";
 import { toast } from "sonner";
 import ProductSkeleton from "../../../components/skeleton/productSkeleton/productSkeleton";
+import { formatNumber, truncateText } from "../../../helper/helper";
 
 const Shop = () => {
   let { id } = useParams();
@@ -56,6 +57,7 @@ const Shop = () => {
         const productsArray = res.data.results.map((product) => ({
           ...product,
           images: product.images.split(","),
+          product_name: truncateText(product.product_name, 15),
         }));
         // console.log(productsArray);
         setProducts(productsArray);
@@ -102,6 +104,7 @@ const Shop = () => {
         const productsArray = res.data.results.map((product) => ({
           ...product,
           images: product.images.split(","),
+          product_name: truncateText(product.product_name, 15),
         }));
         // console.log(productsArray);
         setRelatedProducts(productsArray);
@@ -109,6 +112,9 @@ const Shop = () => {
     } catch (err) {
       console.error(err);
     }
+  };
+  const format = (price) => {
+    return formatNumber(parseInt(price));
   };
 
   useEffect(() => {
@@ -208,7 +214,7 @@ const Shop = () => {
                         relatedProducts.map((product) => {
                           return (
                             <div
-                              className="d-flex align-items-center justify-content-start productItem"
+                              className="d-flex align-items-center justify-content-start featuredProducts"
                               key={product.id}
                             >
                               <Link to={`/product/${product.id}`}>
@@ -240,7 +246,7 @@ const Shop = () => {
                                   </h6>
                                   <div className="d-flex mb-2">
                                     <h5 className="fw-bold me-2">
-                                      {product.selling_price} đ
+                                      {format(product.selling_price)}
                                     </h5>
                                   </div>
                                 </div>
@@ -252,8 +258,8 @@ const Shop = () => {
                   </div>
                 </div>
                 <div className="col-lg-9">
-                  <div className="row g-4">
-                    {products && products.length > 0 ? (
+                  <div className="row g-4 justify-content-center">
+                    {/*  {products && products.length > 0 ? (
                       loading ? (
                         Array(products.length)
                           .fill(0)
@@ -268,7 +274,7 @@ const Shop = () => {
                       ) : (
                         products.map((product) => (
                           <div
-                            className="col-md-6 col-lg-6 col-xl-4 productItem"
+                            className="col-md-4 col-lg-4 col-xl-2 productItem"
                             key={product.id}
                           >
                             <div className="rounded position-relative fruit-item">
@@ -303,7 +309,7 @@ const Shop = () => {
                                 </Link>
                                 <div className="d-flex flex-column gap-2">
                                   <p className="text-dark fs-5 fw-bold mb-0">
-                                    {product.selling_price} đ
+                                    {format(product.selling_price)}
                                   </p>
                                   <button
                                     className="btn border border-secondary rounded-pill px-3 text-primary"
@@ -314,6 +320,61 @@ const Shop = () => {
                                   </button>
                                 </div>
                               </div>
+                            </div>
+                          </div>
+                        ))
+                      )
+                    ) : (
+                      <p>No products</p>
+                    )} */}
+                    {products && products.length > 0 ? (
+                      loading ? (
+                        Array(products.length)
+                          .fill(0)
+                          .map((_, i) => (
+                            <div
+                              className="col-md-6 col-lg-6 col-xl-4 productItem"
+                              key={i}
+                            >
+                              <ProductSkeleton />
+                            </div>
+                          ))
+                      ) : (
+                        products.map((product) => (
+                          <div
+                            className="col-md-4 col-lg-4 col-xl-2 productItem"
+                            key={product.id}
+                          >
+                            <div className="cart">
+                              <span className="cart_img">
+                                <img
+                                  src={
+                                    APP_URL +
+                                    "/public/uploads/" +
+                                    product.images[0]
+                                  }
+                                  alt={product.id}
+                                />
+                                <span
+                                  className="cart_img_add"
+                                  onClick={() => handleAddCart(product)}
+                                >
+                                  Thêm vào giỏ hàng
+                                </span>
+                              </span>
+                              <NavLink
+                                to={`/product/` + product.id}
+                                style={{ display: "block" }}
+                                className="mt-2"
+                              >
+                                {product.product_name || "Name"}
+                              </NavLink>
+                              <span
+                                style={{ display: "block" }}
+                                className="mt-1"
+                              >
+                                {format(product.selling_price)}
+                              </span>
                             </div>
                           </div>
                         ))

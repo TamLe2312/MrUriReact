@@ -5,13 +5,22 @@ const fs = require("fs");
 require("dotenv").config();
 
 const viewProducts = (req, res) => {
-  const sql = `SELECT products.id,
+  const sql = `SELECT 
+    products.id,
     products.product_name,
-    products.selling_price,
-    products.status,
-    GROUP_CONCAT(images.image_name) AS images FROM products INNER JOIN images ON products.id = images.product_id 
-    GROUP BY
-    products.id`;
+    GROUP_CONCAT(DISTINCT images.image_name) AS images,
+    GROUP_CONCAT(DISTINCT productDetail.selling_price) AS selling_price
+FROM 
+    products
+INNER JOIN 
+    images ON products.id = images.product_id
+INNER JOIN 
+    productDetail ON products.id = productDetail.product_id
+WHERE 
+    products.flash_sale = 1
+GROUP BY 
+    products.id, products.product_name
+`;
   connection.query(sql, (err, data) => {
     if (err) {
       console.error(err);
@@ -35,16 +44,25 @@ const viewProducts = (req, res) => {
   });
 };
 
-const viewDetail = (req, res) => {
-  const id = req.params.id;
-  if (id) {
-    const sql = `SELECT id,
-    product_name,
-    selling_price,
-    product_description,
-    stock,
-    status FROM products
-    WHERE id = (?)`;
+const viewProductsByCategory = (req, res) => {
+  const id = parseInt(req.params.id);
+  if (id === 1) {
+    const sql = `SELECT 
+    products.id,
+    products.product_name,
+    GROUP_CONCAT(DISTINCT images.image_name) AS images,
+    GROUP_CONCAT(DISTINCT productDetail.selling_price) AS selling_price
+FROM 
+    products
+INNER JOIN 
+    images ON products.id = images.product_id
+INNER JOIN 
+    productDetail ON products.id = productDetail.product_id
+WHERE 
+    products.flash_sale = 1
+GROUP BY 
+    products.id, products.product_name
+`;
     connection.query(sql, [id], (err, data) => {
       if (err) {
         console.error(err);
@@ -64,10 +82,122 @@ const viewDetail = (req, res) => {
         return res
           .status(200)
           .json({ message: "Thành công", results: transformedData });
-      } else {
-        return res.status(400).json({ message: "Sản phẩm không tồn tại" });
       }
     });
+  } else {
+    const sql = `
+    SELECT products.id,
+    products.product_name,
+    GROUP_CONCAT(DISTINCT images.image_name) AS images,
+    GROUP_CONCAT(DISTINCT productDetail.selling_price) AS selling_price
+FROM 
+    products
+INNER JOIN 
+    images ON products.id = images.product_id
+INNER JOIN 
+    productDetail ON products.id = productDetail.product_id
+INNER JOIN 
+    productcategories ON products.id = productcategories.product_id
+WHERE productcategories.category_id = (?)
+GROUP BY 
+    products.id`;
+    connection.query(sql, [id], (err, data) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ message: "Lỗi máy chủ" });
+      }
+      if (data.length > 0) {
+        const transformedData = data.map((item) => {
+          const productName = item.product_name
+            .replace(/_/g, " ")
+            .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+
+          return {
+            ...item,
+            product_name: productName,
+          };
+        });
+        return res
+          .status(200)
+          .json({ message: "Thành công", results: transformedData });
+      }
+    });
+  }
+};
+
+const viewDetail = (req, res) => {
+  const id = req.params.id;
+  if (id) {
+    const sql = `
+      SELECT 
+        products.id AS product_id,
+        products.product_name,
+        products.product_description,
+        productDetail.id AS product_detail_id,
+        productDetail.selling_price,
+        productDetail.stock,
+        variation.name AS variation_name,
+        variationOption.value AS variation_value
+      FROM 
+        products
+      INNER JOIN 
+        productDetail ON products.id = productDetail.product_id
+      INNER JOIN 
+        productConfiguration ON productDetail.id = productConfiguration.product_detail_id
+      INNER JOIN 
+        variationOption ON productConfiguration.variation_option_id = variationOption.id
+      INNER JOIN 
+        variation ON variationOption.variation_id = variation.id
+      WHERE 
+        products.id = (?)
+      ORDER BY 
+        products.id, productDetail.id, variation.name;
+    `;
+
+    connection.query(sql, [id], (err, data) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ message: "Lỗi máy chủ" });
+      }
+
+      if (data.length > 0) {
+        const productMap = {};
+        data.forEach((item) => {
+          const productId = item.product_id;
+          if (!productMap[productId]) {
+            productMap[productId] = {
+              product_id: productId,
+              product_name: item.product_name
+                .replace(/_/g, " ")
+                .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase()),
+              product_description: item.product_description,
+              variants: [],
+            };
+          }
+
+          productMap[productId].variants.push({
+            product_detail_id: item.product_detail_id,
+            selling_price: item.selling_price,
+            stock: item.stock,
+            variation_name: item.variation_name
+              .replace(/_/g, " ")
+              .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase()),
+            variation_value: item.variation_value,
+          });
+        });
+
+        // Chuyển đổi productMap thành mảng
+        const transformedData = Object.values(productMap);
+
+        return res
+          .status(200)
+          .json({ message: "Thành công", results: transformedData });
+      } else {
+        return res.status(404).json({ message: "Không tìm thấy sản phẩm" });
+      }
+    });
+  } else {
+    return res.status(400).json({ message: "Yêu cầu không hợp lệ" });
   }
 };
 
@@ -99,9 +229,6 @@ const getProducts = (req, res) => {
         const productName = item.product_name
           .replace(/_/g, " ")
           .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
-        const status = item.status
-          .replace(/_/g, " ")
-          .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
 
         const createdAt = new Date(item.created_at).toLocaleDateString(
           "vi-VN",
@@ -115,7 +242,6 @@ const getProducts = (req, res) => {
           ...item,
           product_name: productName,
           created_at: createdAt,
-          status: status,
         };
       });
 
@@ -127,43 +253,31 @@ const getProducts = (req, res) => {
     }
   });
 };
+const featureProduct = (req, res) => {
+  const { id, featureProduct } = req.body;
+  if (id) {
+    const sql = "UPDATE products SET flash_sale = (?) WHERE id = (?)";
+    connection.query(sql, [featureProduct, id], (err, results) => {
+      if (err) {
+        return res.status(500).json({ message: "Lỗi máy chủ" });
+      }
+      return res.status(200).json({ message: "Update flash sale success" });
+    });
+  }
+};
 
 const getProductById = (req, res) => {
   const id = req.params.id;
   if (id) {
-    const sql = "SELECT * FROM products WHERE id = (?)";
+    const sql = "SELECT stock FROM productDetail WHERE id = (?)";
     connection.query(sql, [id], (err, data) => {
       if (err) {
         return res.status(500).json({ message: "Lỗi máy chủ" });
       }
       if (data.length > 0) {
-        const transformedData = data.map((item) => {
-          const productName = item.product_name
-            .replace(/_/g, " ")
-            .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
-          const status = item.status
-            .replace(/_/g, " ")
-            .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
-
-          const createdAt = new Date(item.created_at).toLocaleDateString(
-            "vi-VN",
-            {
-              day: "2-digit",
-              month: "2-digit",
-              year: "numeric",
-            }
-          );
-          return {
-            ...item,
-            product_name: productName,
-            created_at: createdAt,
-            status: status,
-          };
-        });
-
         return res
           .status(200)
-          .json({ message: "Thành công", results: transformedData[0] });
+          .json({ message: "Thành công", results: data[0] });
       } else {
         return res.status(400).json({ message: "Sản phẩm không tồn tại" });
       }
@@ -172,39 +286,21 @@ const getProductById = (req, res) => {
 };
 
 const addProducts = (req, res) => {
-  const {
-    productName,
-    productDescription,
-    importedPrice,
-    sellingPrice,
-    status,
-    stock,
-    productCategories,
-  } = req.body;
+  const { productName, productDescription, productCategories, variations } =
+    req.body;
   const files = req.files;
+  const parsedVariations = variations.map((variation) => JSON.parse(variation));
   if (
     productName &&
     productDescription &&
-    importedPrice &&
-    sellingPrice &&
-    status &&
-    stock &&
+    variations &&
+    parsedVariations &&
     files
   ) {
     const productNameValid = productName.toLowerCase().replace(/\s+/g, "_");
-    const stockValid = parseInt(stock);
-    const sellingPriceValid = parseFloat(sellingPrice);
-    const importedPriceValid = parseFloat(importedPrice);
     connection.query(
-      "INSERT INTO products (product_name,product_description,stock,selling_price,imported_price,status) VALUES (?,?,?,?,?,?)",
-      [
-        productNameValid,
-        productDescription,
-        stockValid,
-        sellingPriceValid,
-        importedPriceValid,
-        status,
-      ],
+      "INSERT INTO products (product_name,product_description) VALUES (?,?)",
+      [productNameValid, productDescription],
       function (err, results, fields) {
         if (err) {
           console.error(err);
@@ -222,6 +318,7 @@ const addProducts = (req, res) => {
                 [lastId, category],
                 function (err, results, fields) {
                   if (err) {
+                    console.error(err);
                     return res
                       .status(500)
                       .json({ error: "Có lỗi xảy ra xin thử lại sau" });
@@ -235,6 +332,7 @@ const addProducts = (req, res) => {
               [lastId, productCategories],
               function (err, results, fields) {
                 if (err) {
+                  console.error(err);
                   return res
                     .status(500)
                     .json({ error: "Có lỗi xảy ra xin thử lại sau" });
@@ -242,7 +340,110 @@ const addProducts = (req, res) => {
               }
             );
           }
-
+          if (Array.isArray(variations)) {
+            const parsedVariations = variations.map((variation) =>
+              JSON.parse(variation)
+            );
+            parsedVariations.forEach((variation) => {
+              connection.query(
+                "INSERT INTO productDetail (product_id,selling_price,stock,status) VALUES (?,?,?,?)",
+                [
+                  lastId,
+                  variation.sellingPrice,
+                  variation.stock,
+                  variation.status,
+                ],
+                function (err, results, fields) {
+                  if (err) {
+                    console.error(err);
+                    return res
+                      .status(500)
+                      .json({ error: "Có lỗi xảy ra xin thử lại sau" });
+                  }
+                  if (results) {
+                    const lastIdProductDetail = results.insertId;
+                    connection.query(
+                      "INSERT INTO variationOption (variation_id,value) VALUES (?,?)",
+                      [variation.variation, variation.variationValue],
+                      function (err, resultsVariationOption, fields) {
+                        if (err) {
+                          return res.status(500).json({
+                            error: "Có lỗi xảy ra xin thử lại sau",
+                          });
+                        }
+                        if (resultsVariationOption) {
+                          const lastIdVariationOption =
+                            resultsVariationOption.insertId;
+                          connection.query(
+                            "INSERT INTO productConfiguration (product_detail_id,variation_option_id) VALUES (?,?)",
+                            [lastIdProductDetail, lastIdVariationOption],
+                            function (err, results, fields) {
+                              if (err) {
+                                console.error(err);
+                                return res.status(500).json({
+                                  error: "Có lỗi xảy ra xin thử lại sau",
+                                });
+                              }
+                            }
+                          );
+                        }
+                      }
+                    );
+                  }
+                }
+              );
+            });
+          } else {
+            const parsedVariation = JSON.parse(variations);
+            connection.query(
+              "INSERT INTO productDetail (product_id,selling_price,stock,status) VALUES (?,?,?,?)",
+              [
+                lastId,
+                parsedVariation.sellingPrice,
+                parsedVariation.stock,
+                parsedVariation.status,
+              ],
+              function (err, results, fields) {
+                if (err) {
+                  console.error(err);
+                  return res
+                    .status(500)
+                    .json({ error: "Có lỗi xảy ra xin thử lại sau" });
+                }
+                if (results) {
+                  const lastIdProductDetail = results.insertId;
+                  connection.query(
+                    "INSERT INTO variationOption (variation_id,value) VALUES (?,?)",
+                    [parsedVariation.variation, parsedVariation.variationValue],
+                    function (err, resultsVariationOption, fields) {
+                      if (err) {
+                        console.error(err);
+                        return res.status(500).json({
+                          error: "Có lỗi xảy ra xin thử lại sau",
+                        });
+                      }
+                      if (resultsVariationOption) {
+                        const lastIdVariationOption =
+                          resultsVariationOption.insertId;
+                        connection.query(
+                          "INSERT INTO productConfiguration (product_detail_id,variation_option_id) VALUES (?,?)",
+                          [lastIdProductDetail, lastIdVariationOption],
+                          function (err, results, fields) {
+                            if (err) {
+                              console.error(err);
+                              return res.status(500).json({
+                                error: "Có lỗi xảy ra xin thử lại sau",
+                              });
+                            }
+                          }
+                        );
+                      }
+                    }
+                  );
+                }
+              }
+            );
+          }
           let completed = 0;
           files.forEach((file) => {
             const fileName = file.filename;
@@ -281,7 +482,67 @@ const productViewById = (req, res) => {
       FROM products 
       LEFT JOIN productCategories ON products.id = productCategories.product_id
       LEFT JOIN categories ON productCategories.category_id = categories.id
-      WHERE products.id = (?)`,
+      WHERE products.id = (?)
+      `,
+      [id],
+      function (err, data) {
+        if (err) {
+          console.log(err);
+          return res
+            .status(500)
+            .json({ error: "Có lỗi xảy ra xin thử lại sau" });
+        }
+        if (data.length > 0) {
+          const transformedData = data.map((item) => {
+            const productName = item.product_name
+              .replace(/_/g, " ")
+              .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+            const status = item.status
+              .replace(/_/g, " ")
+              .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+            const categoriesArray = item.category_names
+              .split(",")
+              .map((category) => {
+                const [categoryName, categoryId] = category.split(":");
+                return {
+                  label: categoryName
+                    .replace(/_/g, " ")
+                    .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase()),
+                  value: parseInt(categoryId),
+                };
+              });
+
+            const createdAt = new Date(item.created_at).toLocaleDateString(
+              "vi-VN",
+              {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+              }
+            );
+
+            return {
+              ...item,
+              product_name: productName,
+              created_at: createdAt,
+              status: status,
+              category_names: categoriesArray,
+            };
+          });
+          return res
+            .status(200)
+            .json({ message: "Success", results: transformedData });
+        }
+      }
+    );
+  } else {
+    connection.query(
+      `SELECT products.*, 
+        (SELECT GROUP_CONCAT(images.image_name) FROM images WHERE products.id = images.product_id) AS images,
+        (SELECT GROUP_CONCAT(CONCAT(categories.category_name, ':', categories.id)) FROM categories INNER JOIN productCategories ON categories.id = productCategories.category_id WHERE products.id = productCategories.product_id) AS category_names
+      FROM products 
+      LEFT JOIN productCategories ON products.id = productCategories.product_id
+      LEFT JOIN categories ON productCategories.category_id = categories.id`,
       [id],
       function (err, data) {
         if (err) {
@@ -405,15 +666,17 @@ const relatedProductsDetail = (req, res) => {
                 (product) => product.product_id
               );
               connection.query(
-                `SELECT  products.id,
-                products.product_name,
-                products.selling_price,
-                products.status,
-                GROUP_CONCAT(images.image_name) AS images FROM products 
-                INNER JOIN images ON products.id = images.product_id 
-                WHERE id IN (?)
-                GROUP BY products.id
-                LIMIT 5`,
+                `SELECT 
+    products.id,
+    products.product_name,
+    GROUP_CONCAT(DISTINCT images.image_name) AS images,
+    GROUP_CONCAT(DISTINCT productDetail.selling_price) AS selling_price
+FROM 
+    products
+INNER JOIN 
+    images ON products.id = images.product_id
+INNER JOIN 
+    productDetail ON products.id = productDetail.product_id WHERE id IN (?) GROUP BY products.id LIMIT 5`,
                 [relatedProductIds],
                 (err, data) => {
                   if (err) {
@@ -781,7 +1044,9 @@ module.exports = {
   relatedProductsDetail,
   redirectCategory,
   editProduct,
+  featureProduct,
   editImage,
   deleteProduct,
   searchProducts,
+  viewProductsByCategory,
 };

@@ -39,6 +39,7 @@ const LazyCheckoutSuccess = lazy(() =>
 const LazyProductView = lazy(() =>
   import("./pages/admin/products/productDetail")
 );
+const LazyVariation = lazy(() => import("./pages/admin/variation/variation"));
 import AddProduct from "./pages/admin/products/addProduct"; //KHÔNG ĐƯỢC XÓA,XÓA LÀ LỖI (DUNNO WHY SORRY)
 
 import Loading from "./components/loading/Loading";
@@ -208,6 +209,14 @@ function App() {
             element={
               <Suspense fallback={<Loading />}>
                 <LazyOrders />
+              </Suspense>
+            }
+          />
+          <Route
+            path="variation"
+            element={
+              <Suspense fallback={<Loading />}>
+                <LazyVariation />
               </Suspense>
             }
           />

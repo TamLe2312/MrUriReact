@@ -45,3 +45,8 @@
   background-color: transparent;
   color: #0d6efd;
 }
+.variantTitle strong {
+  font-size: 85%;
+  color: #4ea8cd;
+  padding-left: 8px;
+}

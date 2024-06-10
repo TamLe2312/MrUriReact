@@ -40,11 +40,44 @@ function SocketContextProvider({ children }) {
       console.error(err);
     }
   };
-
+  const fetchGoogle = async (localId) => {
+    try {
+      const res = await request.postRequest("users/verifyGoogle", { localId });
+      if (res.status === 200) {
+        if (res.data.results) {
+          const socket = io(APP_WEB, {
+            query: {
+              userId: res.data.results.id,
+            },
+          });
+          setSocket(socket);
+          socket.on("getOnlineUser", (user) => {
+            setOnlineUser(user);
+          });
+          return () => socket.close();
+        } else {
+          if (socket) {
+            socket.close();
+            setSocket(null);
+          }
+        }
+      }
+    } catch (err) {
+      if (err.response.status === 500) {
+        localStorage.removeItem("isGoogle");
+      }
+      console.error(err);
+    }
+  };
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      fetchUser(token);
+    const isGoogle = localStorage.getItem("isGoogle");
+    if (isGoogle) {
+      fetchGoogle(isGoogle);
+    } else {
+      const token = localStorage.getItem("token");
+      if (token) {
+        fetchUser(token);
+      }
     }
   }, []);
 

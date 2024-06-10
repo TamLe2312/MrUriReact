@@ -51,7 +51,8 @@ const getUsers = (req, res) => {
 const getUserById = (req, res) => {
   const id = req.params.id;
   if (id) {
-    const sql = "SELECT username,role,email,name FROM users WHERE id = (?)";
+    const sql =
+      "SELECT username,role,email,name,address,phone_number FROM users WHERE id = (?)";
     connection.query(sql, [id], (err, data) => {
       if (err) {
         return res.status(500).json({ message: "Lỗi máy chủ" });
@@ -618,6 +619,87 @@ const deleteSlide = (req, res) => {
     );
   }
 };
+const handleLoginGoogle = (req, res) => {
+  const { displayName, email, localId, photoUrl } = req.body.user;
+  if (displayName && email && localId && photoUrl) {
+    connection.query(
+      `SELECT * FROM users WHERE username = (?)`,
+      [localId],
+      (err, data) => {
+        if (err) {
+          return res.status(500).json({ message: "Lỗi máy chủ" });
+        }
+        if (data.length > 0) {
+          return res.status(200).json({
+            message: "Login Success",
+            isGoogle: true,
+            localId: localId,
+          });
+        } else {
+          const myPlaintextPassword = localId;
+          bcrypt.hash(myPlaintextPassword, saltRounds, function (err, hash) {
+            if (!err) {
+              connection.query(
+                `INSERT INTO users (username,googleId,name,email,password,avatar) VALUES (?,?,?,?,?)`,
+                [localId, localId, displayName, email, hash, photoUrl],
+                (err, results) => {
+                  if (err) {
+                    return res.status(500).json({ message: "Lỗi máy chủ" });
+                  }
+                  return res.status(200).json({
+                    message: "Login Success",
+                    isGoogle: true,
+                    localId: localId,
+                  });
+                }
+              );
+            }
+          });
+        }
+      }
+    );
+  }
+};
+const verifyGoogle = (req, res) => {
+  const { localId } = req.body;
+  if (localId) {
+    connection.query(
+      "SELECT id,role FROM users WHERE username = ? OR googleId = (?)",
+      [localId, localId],
+      async function (err, results, fields) {
+        if (err) {
+          return res.status(500).json({ error: "Lỗi máy chủ" });
+        }
+        if (results.length > 0) {
+          return res
+            .status(200)
+            .json({ mesage: "Success", results: results[0] });
+        }
+      }
+    );
+  }
+};
+const addressForm = (req, res) => {
+  const { address, phoneNumber, provinces, districts, wards, id } = req.body;
+  if (address && phoneNumber && provinces && districts && wards) {
+    const parsedProvinces = JSON.parse(provinces);
+    const parsedDistricts = JSON.parse(districts);
+    const parsedWards = JSON.parse(wards);
+    const combineAddress = `${address} ${parsedWards.label},${parsedDistricts.label},${parsedProvinces.label}`;
+    connection.query(
+      "UPDATE users SET address = (?),phone_number = (?) WHERE id = (?)",
+      [combineAddress, phoneNumber, id],
+      async function (err, results, fields) {
+        if (err) {
+          return res.status(500).json({ error: "Lỗi máy chủ" });
+        }
+        if (results) {
+          return res.status(200).json({ message: "Add Success" });
+        }
+      }
+    );
+  }
+};
 
 module.exports = {
   verifyToken,
@@ -637,4 +719,7 @@ module.exports = {
   addSlide,
   editSlide,
   deleteSlide,
+  handleLoginGoogle,
+  verifyGoogle,
+  addressForm,
 };

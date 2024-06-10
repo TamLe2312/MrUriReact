@@ -25,14 +25,37 @@ const CheckoutSuccess = () => {
       console.error(err);
     }
   };
+  const fetchGoogle = async (localId) => {
+    try {
+      const res = await request.postRequest("users/verifyGoogle", {
+        localId,
+      });
+      // console.log(localId);
+      if (res.status === 200) {
+        /* console.log(res);
+        setUser(res.data.results); */
+        handleSet(res.data.results);
+      }
+    } catch (err) {
+      if (err.response.status === 500) {
+        localStorage.removeItem("isGoogle");
+      }
+      console.error(err);
+    }
+  };
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      fetchUser(token);
+    const isGoogle = localStorage.getItem("isGoogle");
+    if (isGoogle) {
+      fetchGoogle(isGoogle);
     } else {
-      handleSet(null);
-      toast.error("You need to sign in first");
-      navigate("/sign-in");
+      const token = localStorage.getItem("token");
+      if (token) {
+        fetchUser(token);
+      } else {
+        handleSet(null);
+        toast.error("You need to sign in first");
+        navigate("/sign-in");
+      }
     }
   }, []);
   const location = useLocation();

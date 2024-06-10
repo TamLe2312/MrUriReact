@@ -23,7 +23,6 @@ import { Outlet, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import * as request from "../../utilities/request";
 import { useContext } from "react";
-import { SocketContext } from "../../context/socketContext";
 import { UserContext } from "../../context/userProvider";
 
 const drawerWidth = 240;
@@ -80,7 +79,7 @@ const AdminHome = () => {
   // if (onlineUser) {
   //   console.log(onlineUser);
   // }
-  const { setUser } = useContext(UserContext);
+  const { setUser, handleSet } = useContext(UserContext);
   const navigate = useNavigate();
   const fetchUser = async (token) => {
     try {
@@ -99,13 +98,32 @@ const AdminHome = () => {
       console.error(err);
     }
   };
-
+  const fetchGoogle = async (localId) => {
+    try {
+      const res = await request.postRequest("users/verifyGoogle", { localId });
+      if (res.status === 200) {
+        /* console.log(res);
+        setUser(res.data.results); */
+        handleSet(res.data.results);
+      }
+    } catch (err) {
+      if (err.response.status === 500) {
+        localStorage.removeItem("isGoogle");
+      }
+      console.error(err);
+    }
+  };
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      fetchUser(token);
+    const isGoogle = localStorage.getItem("isGoogle");
+    if (isGoogle) {
+      fetchGoogle(isGoogle);
     } else {
-      navigate("/");
+      const token = localStorage.getItem("token");
+      if (token) {
+        fetchUser(token);
+      } else {
+        navigate("/");
+      }
     }
   }, []);
 
@@ -145,11 +163,9 @@ const AdminHome = () => {
             >
               Dashboard
             </Typography>
-            <IconButton color="inherit">
-              <Badge badgeContent={4} color="secondary">
-                <NotificationsIcon />
-              </Badge>
-            </IconButton>
+            <a href="/" style={{ color: "#fff", textDecoration: "none" }}>
+              Home
+            </a>
           </Toolbar>
         </AppBar>
         <Drawer variant="permanent" open={open}>

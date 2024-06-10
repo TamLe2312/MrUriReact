@@ -28,7 +28,10 @@ function CartProvider({ children }) {
   };
   const deleteCart = async (cart) => {
     try {
-      const res = await request.deleteRequest(`carts/delete/${cart.cart.id}`);
+      const res = await request.postRequest(`carts/delete`, {
+        cart: cart.cart.id,
+        userId: cart.user_id,
+      });
       // console.log(res);
       toast.success(res.data.message);
       return res.data.results;

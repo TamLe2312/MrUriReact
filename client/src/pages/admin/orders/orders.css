@@ -3,3 +3,8 @@
   height: 100px;
   object-fit: cover;
 }
+.variantTitle strong {
+  font-size: 85%;
+  color: #4ea8cd;
+  padding-left: 8px;
+}

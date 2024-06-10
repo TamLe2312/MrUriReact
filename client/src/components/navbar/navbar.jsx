@@ -37,6 +37,7 @@ const Navbar = () => {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("isGoogle");
     handleSet(null);
   };
   const fetchUser = async (userId) => {
@@ -119,7 +120,8 @@ const Navbar = () => {
             <div className="top-link pe-2">
               {currentUser !== null ? (
                 <small className="text-white userInform">
-                  Hello {currentUser.username},
+                  Hello{" "}
+                  {currentUser.name ? currentUser.name : currentUser.username},
                   <button onClick={handleLogout}>Logout</button>
                 </small>
               ) : (
@@ -266,7 +268,7 @@ const Navbar = () => {
                 <a href="/profile" className="position-relative me-4 my-auto">
                   <FaUser id="navbarHandleIcons" />
                 </a>
-                {currentUser !== null && (
+                {currentUser !== null && currentUser.role === "admin" && (
                   <a href="/dashboard" className="my-auto">
                     <SettingsIcon id="navbarHandleIcons" />
                   </a>

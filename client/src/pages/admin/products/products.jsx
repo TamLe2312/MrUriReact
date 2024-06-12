@@ -73,7 +73,7 @@ const Products = () => {
       });
       if (res.status === 200) {
         toast.success(res.data.message);
-        await socket.emit("delete_product", id);
+        await socket.emit("delete_product");
         fetchProducts();
       }
     } catch (err) {
@@ -89,6 +89,7 @@ const Products = () => {
       });
       if (res.status === 200) {
         toast.success(res.data.message);
+        await socket.emit("fs_product");
         fetchProducts();
       }
     } catch (err) {

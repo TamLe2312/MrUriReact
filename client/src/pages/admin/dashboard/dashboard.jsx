@@ -7,6 +7,7 @@ import Link from "@mui/material/Link";
 import Chart from "./chart/chart";
 import Deposits from "./deposits/deposits";
 import Orders from "./orders/orders";
+import ProductStockPie from "./productStockPie/productStockPie";
 
 function Copyright(props) {
   return (
@@ -41,6 +42,17 @@ const Dashboard = () => {
             }}
           >
             <Chart />
+          </Paper>
+        </Grid>
+        <Grid item xs={12} md={12} lg={12}>
+          <Paper
+            sx={{
+              p: 2,
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            <ProductStockPie />
           </Paper>
         </Grid>
         {/* Recent Orders */}

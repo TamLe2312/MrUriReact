@@ -23,17 +23,15 @@ const Carts = () => {
 
   const fetchCarts = async (user) => {
     if (user) {
-      setIsLoading(true);
       try {
         const res = await request.getRequest(`carts/cart/${user.id}`);
         if (res.status === 200) {
           setCartItems(res.data.results);
           // console.log(cartItems);
+          setIsLoading(false);
         }
       } catch (err) {
         console.error(err);
-      } finally {
-        setIsLoading(false);
       }
     }
   };
@@ -105,6 +103,7 @@ const Carts = () => {
     }
   };
   const fetchGoogle = async (localId) => {
+    setIsLoading(true);
     try {
       const res = await request.postRequest("users/verifyGoogle", {
         localId,
@@ -137,7 +136,6 @@ const Carts = () => {
       }
     }
   }, []);
-
   const changeTotal = (cartItems) => {
     if (cartItems.length > 0) {
       let currentTotal = 0;
@@ -185,7 +183,7 @@ const Carts = () => {
               </thead>
               <tbody>
                 {isLoading ? (
-                  Array(cartItems.length)
+                  Array(5)
                     .fill(0)
                     .map((_, i) => <CartSkeleton key={i} />)
                 ) : cartItems && cartItems.length > 0 ? (

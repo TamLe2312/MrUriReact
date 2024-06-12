@@ -58,8 +58,6 @@ INNER JOIN
     images ON products.id = images.product_id
 INNER JOIN 
     productDetail ON products.id = productDetail.product_id
-WHERE 
-    products.flash_sale = 1
 GROUP BY 
     products.id, products.product_name
 `;
@@ -289,14 +287,7 @@ const addProducts = (req, res) => {
   const { productName, productDescription, productCategories, variations } =
     req.body;
   const files = req.files;
-  const parsedVariations = variations.map((variation) => JSON.parse(variation));
-  if (
-    productName &&
-    productDescription &&
-    variations &&
-    parsedVariations &&
-    files
-  ) {
+  if (productName && productDescription && variations && files) {
     const productNameValid = productName.toLowerCase().replace(/\s+/g, "_");
     connection.query(
       "INSERT INTO products (product_name,product_description) VALUES (?,?)",
@@ -340,7 +331,7 @@ const addProducts = (req, res) => {
               }
             );
           }
-          if (Array.isArray(variations)) {
+          if (Array.isArray(variations) && variations.length > 1) {
             const parsedVariations = variations.map((variation) =>
               JSON.parse(variation)
             );
@@ -394,14 +385,14 @@ const addProducts = (req, res) => {
               );
             });
           } else {
-            const parsedVariation = JSON.parse(variations);
+            const parsedVariations = JSON.parse(variations);
             connection.query(
               "INSERT INTO productDetail (product_id,selling_price,stock,status) VALUES (?,?,?,?)",
               [
                 lastId,
-                parsedVariation.sellingPrice,
-                parsedVariation.stock,
-                parsedVariation.status,
+                parsedVariations.sellingPrice,
+                parsedVariations.stock,
+                parsedVariations.status,
               ],
               function (err, results, fields) {
                 if (err) {
@@ -414,7 +405,10 @@ const addProducts = (req, res) => {
                   const lastIdProductDetail = results.insertId;
                   connection.query(
                     "INSERT INTO variationOption (variation_id,value) VALUES (?,?)",
-                    [parsedVariation.variation, parsedVariation.variationValue],
+                    [
+                      parsedVariations.variation,
+                      parsedVariations.variationValue,
+                    ],
                     function (err, resultsVariationOption, fields) {
                       if (err) {
                         console.error(err);
@@ -601,11 +595,16 @@ const relatedProducts = (req, res) => {
   const id = req.params.id;
   if (id) {
     connection.query(
-      `SELECT p.product_name,p.id,p.selling_price,GROUP_CONCAT(i.image_name) AS images
+      `SELECT 
+      p.product_name,
+      p.id,
+      GROUP_CONCAT(DISTINCT pd.selling_price) AS selling_price,
+      GROUP_CONCAT(i.image_name) AS images
       FROM productCategories pc
       INNER JOIN categories c ON pc.category_id = c.id
       INNER JOIN products p ON pc.product_id = p.id
       INNER JOIN images i ON i.product_id = p.id
+      INNER JOIN productDetail pd ON p.id = pd.product_id
       WHERE c.category_slug = ?
       GROUP BY p.id
       ORDER BY RAND()
@@ -667,16 +666,15 @@ const relatedProductsDetail = (req, res) => {
               );
               connection.query(
                 `SELECT 
-    products.id,
-    products.product_name,
-    GROUP_CONCAT(DISTINCT images.image_name) AS images,
-    GROUP_CONCAT(DISTINCT productDetail.selling_price) AS selling_price
-FROM 
-    products
-INNER JOIN 
-    images ON products.id = images.product_id
-INNER JOIN 
-    productDetail ON products.id = productDetail.product_id WHERE id IN (?) GROUP BY products.id LIMIT 5`,
+                products.id,
+                products.product_name,
+                GROUP_CONCAT(DISTINCT images.image_name) AS images,
+                GROUP_CONCAT(DISTINCT productDetail.selling_price) AS selling_price
+                FROM products
+                INNER JOIN images ON products.id = images.product_id
+                INNER JOIN productDetail ON products.id = productDetail.product_id 
+                WHERE products.id IN (?)
+                GROUP BY products.id LIMIT 5;`,
                 [relatedProductIds],
                 (err, data) => {
                   if (err) {

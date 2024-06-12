@@ -21,6 +21,9 @@ const {
   handleLoginGoogle,
   verifyGoogle,
   addressForm,
+  addComment,
+  viewComment,
+  isAddress,
 } = require("../../controller/users/users");
 const Router = express.Router();
 
@@ -38,6 +41,7 @@ const upload = multer({ storage: storage });
 
 Router.get("/", getUsers);
 Router.get("/user/:id", getUserById);
+Router.get("/getAddress/:id", isAddress);
 Router.get("/slider", getSlide);
 Router.post("/google", handleLoginGoogle);
 Router.post("/verifyGoogle", verifyGoogle);
@@ -48,6 +52,8 @@ Router.delete("/deleteSlide/:id", deleteSlide);
 Router.post("/addSlide", upload.single("image"), addSlide);
 Router.post("/verifyToken", verifyToken);
 Router.post("/add", addUser);
+Router.post("/comment", addComment);
+Router.get("/viewComment/:id", viewComment);
 Router.post("/profile", editProfile);
 Router.post("/profilePassword", editPassword);
 Router.post("/edit", editUser);

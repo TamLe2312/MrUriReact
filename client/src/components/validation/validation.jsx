@@ -1,3 +1,5 @@
+import { VietnameseToxic } from "../vietnameseToxic/vietnameseToxic";
+
 const Validation = (value, type) => {
   let errors = {};
 
@@ -154,6 +156,9 @@ const Validation = (value, type) => {
     if (!value.email) {
       errors.email = "Email cannot be empty";
     }
+    if (!value.address) {
+      errors.address = "Address cannot be empty";
+    }
     if (value.email) {
       let regex =
         /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
@@ -183,6 +188,17 @@ const Validation = (value, type) => {
     }
     if (!value.wards) {
       errors.wards = "Ward cannot be empty";
+    }
+  } else if (type === "comment") {
+    if (!value.comment) {
+      errors.comment = "Comment cannot be empty";
+    }
+    const check = VietnameseToxic(value.comment);
+    if (check) {
+      errors.comment = "Comment cannot be bad words";
+    }
+    if (!value.rate) {
+      errors.rate = "Rate cannot be empty";
     }
   }
 

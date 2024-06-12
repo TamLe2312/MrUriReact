@@ -8,12 +8,19 @@ import { APP_URL } from "../../../config/env";
 import { toast } from "sonner";
 import { CartContext } from "../../../context/cartProvider";
 import { UserContext } from "../../../context/userProvider";
-import { formatNumber } from "../../../helper/helper";
+import { formatNumber, minPrice, truncateText } from "../../../helper/helper";
+import Validation from "../../../components/validation/validation";
+import Star from "../../../components/star/star";
+import StarIcon from "@mui/icons-material/Star";
+import { FaStar } from "react-icons/fa";
+import { VietnameseToxic } from "../../../components/vietnameseToxic/vietnameseToxic";
 
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [product, setProduct] = useState();
+  const [comments, setComments] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [images, setImages] = useState([]);
   const [redirectCategory, setRedirectCategory] = useState();
   const [viewImg, setViewImg] = useState(0);
@@ -23,6 +30,13 @@ const ProductDetail = () => {
   const { user } = useContext(UserContext);
   const { carts, dispatch } = useContext(CartContext);
   const [selectedVariant, setSelectedVariant] = useState(null);
+  const [errors, setErrors] = useState({});
+  const [formComment, setFormComment] = useState({
+    comment: "",
+    rate: 5,
+  });
+  const [hover, setHover] = useState(null);
+  const [mode, setMode] = useState("description");
   const format = (price) => {
     return formatNumber(parseInt(price));
   };
@@ -31,6 +45,48 @@ const ProductDetail = () => {
   };
   const handleView = (index) => {
     setViewImg(index);
+  };
+  const handleChange = (e) => {
+    setFormComment({ ...formComment, [e.target.name]: e.target.value });
+  };
+  const validate = () => {
+    let errors = {};
+    let isValid = true;
+
+    // Validate main form data
+    const errorsForm = Validation(formComment, "comment");
+    if (Object.keys(errorsForm).length !== 0) {
+      isValid = false;
+      setErrors({ ...errors, ...errorsForm });
+    }
+    if (!user) {
+      setErrors((prevErrors) => ({
+        ...prevErrors,
+        user: "You must be logged to comment",
+      }));
+      isValid = false;
+    }
+    return isValid;
+  };
+  const handlePost = async () => {
+    setErrors({});
+    const isValid = validate();
+    if (isValid) {
+      try {
+        const res = await request.postRequest("users/comment", {
+          userId: user.id,
+          productId: id,
+          comment: formComment.comment,
+          rate: formComment.rate,
+        });
+        if (res.status === 200) {
+          toast.success(res.data.message);
+          fetchComments(id);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
   };
 
   const handleQuantity = (e) => {
@@ -109,6 +165,8 @@ const ProductDetail = () => {
         const productsArray = res.data.results.map((product) => ({
           ...product,
           images: product.images.split(","),
+          selling_price: minPrice(product.selling_price.split(",")),
+          product_name: truncateText(product.product_name, 15),
         }));
         // console.log(productsArray);
         setRelatedProducts(productsArray);
@@ -128,9 +186,23 @@ const ProductDetail = () => {
       console.error(err);
     }
   };
+  const fetchComments = async (id) => {
+    setIsLoading(true);
+    try {
+      const res = await request.getRequest(`users/viewComment/${id}`);
+      // console.log(res);
+      if (res.status === 200) {
+        setComments(res.data.results);
+        setIsLoading(false);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
   useEffect(() => {
     if (id) {
       fetchProduct(id);
+      fetchComments(id);
       fetchCategories();
       fetchRelatedProductsDetail(id);
       fetchRedirectCategory(id);
@@ -299,7 +371,12 @@ const ProductDetail = () => {
                   <nav>
                     <div className="nav nav-tabs mb-3">
                       <button
-                        className="nav-link active border-white border-bottom-0"
+                        className={
+                          mode === "description"
+                            ? "nav-link active border-white border-bottom-0"
+                            : "nav-link border-white border-bottom-0"
+                        }
+                        onClick={() => setMode("description")}
                         type="button"
                         role="tab"
                         id="nav-about-tab"
@@ -310,14 +387,30 @@ const ProductDetail = () => {
                       >
                         Description
                       </button>
+                      <button
+                        className={
+                          mode === "reviews"
+                            ? "nav-link active border-white border-bottom-0"
+                            : "nav-link border-white border-bottom-0"
+                        }
+                        onClick={() => setMode("reviews")}
+                        type="button"
+                        role="tab"
+                        id="nav-mission-tab"
+                        data-bs-toggle="tab"
+                        data-bs-target="#nav-mission"
+                        aria-controls="nav-mission"
+                        aria-selected="false"
+                      >
+                        Reviews
+                      </button>
                     </div>
                   </nav>
                   <div className="tab-content mb-5">
                     <div
-                      className="tab-pane active"
-                      id="nav-about"
-                      role="tabpanel"
-                      aria-labelledby="nav-about-tab"
+                      className={
+                        mode === "description" ? "tab-pane active" : "tab-pane"
+                      }
                       dangerouslySetInnerHTML={{
                         __html:
                           product && product.product_description
@@ -325,6 +418,125 @@ const ProductDetail = () => {
                             : "Không có",
                       }}
                     ></div>
+                    <div
+                      className={
+                        mode === "reviews" ? "tab-pane active" : "tab-pane"
+                      }
+                    >
+                      {isLoading
+                        ? "Loading..."
+                        : comments && comments.length > 0
+                        ? comments.map((comment) => {
+                            return (
+                              <div
+                                className="d-flex align-items-center"
+                                key={comment.id}
+                              >
+                                <img
+                                  src={`https://avatar.iran.liara.run/username?username=${comment.username}`}
+                                  className="img-fluid rounded-circle p-3"
+                                  style={{ width: "100px", height: "100px" }}
+                                />
+                                <div>
+                                  <p style={{ fontSize: "14px", margin: 0 }}>
+                                    {comment.created_at}
+                                  </p>
+                                  <div className="d-flex justify-content-between align-items-center">
+                                    <h5
+                                      style={{ margin: 0, paddingRight: "8px" }}
+                                    >
+                                      {comment.username}
+                                    </h5>
+                                    <div className="d-flex">
+                                      <Star initialRate={comment.rate} />
+                                    </div>
+                                  </div>
+                                  <p>{comment.comment}</p>
+                                </div>
+                              </div>
+                            );
+                          })
+                        : "No comment"}
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="mb-2 fw-bold">Leave a comment</h4>
+                    <div className="row">
+                      <div className="col-lg-12">
+                        <div className="border-bottom rounded my-4">
+                          <textarea
+                            name="comment"
+                            id="comment"
+                            className={
+                              errors.comment
+                                ? "form-control is-invalid border-0"
+                                : "form-control border-0"
+                            }
+                            cols="20"
+                            rows="8"
+                            placeholder="Your Review"
+                            spellCheck="false"
+                            onChange={handleChange}
+                          ></textarea>
+                          {errors.comment && (
+                            <div
+                              id="validationServerBrandFeedback"
+                              className="invalid-feedback"
+                            >
+                              {errors.comment}
+                            </div>
+                          )}
+                          {errors.user && (
+                            <div className="alert alert-danger" role="alert">
+                              {errors.user}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="col-lg-12">
+                        <div className="d-flex justify-content-between">
+                          <div className="d-flex align-items-center">
+                            <p className="mb-0 me-3">Please rate:</p>
+                            <div className="rating">
+                              {[...Array(5)].map((star, index) => {
+                                const currentRating = index + 1;
+                                return (
+                                  <label key={currentRating}>
+                                    <input
+                                      type="radio"
+                                      name="rate"
+                                      value={currentRating}
+                                      onClick={handleChange}
+                                      defaultValue={formComment.rate}
+                                    />
+                                    <FaStar
+                                      className="star"
+                                      size={20}
+                                      color={
+                                        currentRating <=
+                                        (hover || formComment.rate)
+                                          ? "#ffc107"
+                                          : "#e4e5e9"
+                                      }
+                                      onMouseEnter={() =>
+                                        setHover(currentRating)
+                                      }
+                                      onMouseLeave={() => setHover(null)}
+                                    />
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          </div>
+                          <button
+                            className="btn border border-secondary text-primary rounded-pill px-4 py-3"
+                            onClick={handlePost}
+                          >
+                            Post Comment
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -388,7 +600,7 @@ const ProductDetail = () => {
                                 <h6 className="mb-2">{product.product_name}</h6>
                                 <div className="d-flex mb-2">
                                   <h5 className="fw-bold me-2">
-                                    {product.selling_price} đ
+                                    {format(product.selling_price)}
                                   </h5>
                                 </div>
                               </div>

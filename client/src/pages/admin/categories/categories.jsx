@@ -108,6 +108,7 @@ const Categories = () => {
           if (res.status === 200) {
             toast.success(res.data.message);
             cleaner();
+            setIsEdit(false);
             fetchCategories();
           }
         } catch (err) {
@@ -183,9 +184,9 @@ const Categories = () => {
   };
   const fetchCategories = async () => {
     try {
-      const res = await request.getRequest(`categories`);
+      const res = await request.getRequest(`categories/admin`);
+      console.log(res);
       if (res.data.results.length > 0) {
-        // console.log(res);
         setTotal(res.data.results.length);
         setCategories(res.data.results);
         const lastIndex = (page + 1) * rowsPerPage;
@@ -357,7 +358,7 @@ const Categories = () => {
                                 : category.parent_category_name}
                             </TableCell>
                             <TableCell>
-                              {category.status === 1 ? "Show" : "Hide"}
+                              {category.status == 1 ? "Show" : "Hide"}
                             </TableCell>
                             <TableCell>
                               <div className="handleButtonAction">

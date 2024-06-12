@@ -47,6 +47,7 @@ const ProductCategories = () => {
   const fetchProducts = async (id) => {
     try {
       const res = await request.getRequest(`products/viewByCategory/${id}`);
+      // console.log(res);
       const productsArray = res.data.results.map((product) => ({
         ...product,
         images: product.images.split(","),

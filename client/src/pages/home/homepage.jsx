@@ -119,8 +119,25 @@ const Homepage = () => {
           const productsArray = products.map((product) => ({
             ...product,
             images: product.images.split(","),
+            selling_price: minPrice(product.selling_price.split(",")),
             product_name: truncateText(product.product_name, 15),
           }));
+          setIsLoading(false);
+          setProducts(productsArray);
+        } else {
+          setProducts([]);
+        }
+      });
+      socket.on("update_fs", (products) => {
+        setIsLoading(true);
+        if (products.length > 0) {
+          const productsArray = products.map((product) => ({
+            ...product,
+            images: product.images.split(","),
+            selling_price: minPrice(product.selling_price.split(",")),
+            product_name: truncateText(product.product_name, 15),
+          }));
+          // console.log(productsArray);
           setIsLoading(false);
           setProducts(productsArray);
         } else {
@@ -204,37 +221,37 @@ const Homepage = () => {
         </div>
       </div>
       {/* // <!-- Featurs Section End --> */}
-
       {/* // <!-- Fruits Shop Start--> */}
-      <div className="container-fluid fruite py-2">
-        <div className="container">
-          <div className="tab-className text-center">
-            <div className="row g-4">
-              <div className="col-lg-4 text-start">
-                <h1>Featured Products</h1>
+      {products && products.length > 0 && (
+        <div className="container-fluid fruite py-2">
+          <div className="container">
+            <div className="tab-className text-center">
+              <div className="row g-4">
+                <div className="col-lg-4 text-start">
+                  <h1>Featured Products</h1>
+                </div>
               </div>
-            </div>
-            <div className="tab-content productsContainer">
-              <div id="tab-1" className="tab-pane fade show p-0 active">
-                <div className="container">
-                  {isLoading
-                    ? "Loading..."
-                    : products.length > 0 && (
-                        <Carousel
-                          responsive={responsive}
-                          showDots={products.length > 4}
-                        >
-                          {products.length > 0 ? (
-                            products.map((item, index) => (
-                              <Product key={index} item={item} />
-                            ))
-                          ) : (
-                            <Product />
-                          )}
-                        </Carousel>
-                      )}
+              <div className="tab-content productsContainer">
+                <div id="tab-1" className="tab-pane fade show p-0 active">
+                  <div className="container">
+                    {isLoading ? (
+                      "Loading..."
+                    ) : (
+                      <Carousel
+                        responsive={responsive}
+                        showDots={products.length > 4}
+                      >
+                        {products.length > 0 ? (
+                          products.map((item, index) => (
+                            <Product key={index} item={item} />
+                          ))
+                        ) : (
+                          <Product />
+                        )}
+                      </Carousel>
+                    )}
 
-                  {/* {isLoading
+                    {/* {isLoading
                       ? Array(8)
                           .fill(0)
                           .map((_, i) => (
@@ -298,12 +315,13 @@ const Homepage = () => {
                             </div>
                           );
                         })} */}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
       <ProductCategories />
       {/* <!-- Fruits Shop End--> */}
     </>

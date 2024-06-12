@@ -30,7 +30,6 @@ const AddProduct = () => {
   const [errors, setErrors] = useState({});
   const [options, setOptions] = useState([]);
   const [optionsVariation, setOptionsVariation] = useState([]);
-  const [optionsVariationValue, setOptionsVariationValue] = useState([]);
 
   useEffect(() => {
     if (editedProduct && isEdit) {
@@ -159,7 +158,7 @@ const AddProduct = () => {
           });
 
           const response = await request.postRequest(`products/add`, formDatas);
-          console.log(response);
+          // console.log(response);
           if (response.status === 200) {
             toast.success(response.data.message);
             await socket.emit("add_product");
@@ -634,9 +633,9 @@ const AddProduct = () => {
               >
                 Add
               </button>
-              <button className="btn mt-3 btn-success" onClick={Log}>
+              {/*   <button className="btn mt-3 btn-success" onClick={Log}>
                 Log
-              </button>
+              </button> */}
               <div className="form-group imageInput">
                 <label htmlFor="images">
                   <FileUploadIcon />

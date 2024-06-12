@@ -1,0 +1,6 @@
+.rating input[type="radio"] {
+  display: none;
+}
+.rating .star {
+  cursor: pointer;
+}

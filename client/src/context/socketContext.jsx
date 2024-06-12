@@ -21,6 +21,7 @@ function SocketContextProvider({ children }) {
               userId: res.data.results.id,
             },
           });
+          // console.log(socket);
           setSocket(socket);
           socket.on("getOnlineUser", (user) => {
             setOnlineUser(user);
@@ -50,6 +51,7 @@ function SocketContextProvider({ children }) {
               userId: res.data.results.id,
             },
           });
+          // console.log(socket);
           setSocket(socket);
           socket.on("getOnlineUser", (user) => {
             setOnlineUser(user);

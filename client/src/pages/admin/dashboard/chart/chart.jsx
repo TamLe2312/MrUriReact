@@ -73,8 +73,7 @@ const Chart = () => {
                   label: "Profit (đ)",
                   data: data.data,
                   borderRadius: 2,
-
-                  backgroundColor: "rgb(67, 93, 118)",
+                  backgroundColor: "#1976d2",
                 },
               ],
             }}

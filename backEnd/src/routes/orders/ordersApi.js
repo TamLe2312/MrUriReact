@@ -12,6 +12,7 @@ const {
   getChart,
   getOrderById,
   deleteOrderAdmin,
+  getPie,
 } = require("../../controller/orders/orders");
 const Router = express.Router();
 
@@ -19,6 +20,7 @@ Router.get("/user/:id", getOrders);
 Router.post("/getOrderById", getOrderById);
 Router.get("/getAll", getAll);
 Router.get("/chart", getChart);
+Router.get("/pie", getPie);
 Router.post("/edit/:id", editOrder);
 Router.post("/editStatus", editStatus);
 Router.post("/cancel", cancelOrder);

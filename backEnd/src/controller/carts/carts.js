@@ -359,7 +359,6 @@ ORDER BY carts.id, productDetail.id, variation.name`;
 
 const checkOut = (req, res) => {
   const {
-    name,
     phoneNumber,
     address,
     provinces,
@@ -368,10 +367,10 @@ const checkOut = (req, res) => {
     products,
     userId,
     total,
+    shipping,
     paymentMethod,
   } = req.body;
   if (
-    name &&
     phoneNumber &&
     address &&
     provinces &&
@@ -380,13 +379,15 @@ const checkOut = (req, res) => {
     products &&
     userId &&
     total &&
+    shipping &&
     paymentMethod
   ) {
     const fullAddress = `${address},${wards},${districts},${provinces}`;
+    let totalSum = Number(total) + Number(shipping);
     if (paymentMethod == "cash") {
       connection.query(
         `INSERT INTO orders (user_id,address,pay,phone_number,total,status) VALUES (?,?,?,?,?,?)`,
-        [userId, fullAddress, paymentMethod, phoneNumber, total, "pending"],
+        [userId, fullAddress, paymentMethod, phoneNumber, totalSum, "pending"],
         (err, results, fields) => {
           if (err) {
             console.error(err);
@@ -419,6 +420,20 @@ const checkOut = (req, res) => {
                     return res.status(500).json({ message: "Lỗi máy chủ" });
                   }
                   completed++;
+                  connection.query(
+                    `UPDATE productDetail SET stock = stock - ?, bought = bought + ? WHERE id = ?`,
+                    [
+                      parseProduct.quantity,
+                      parseProduct.quantity,
+                      parseProduct.product_detail_id,
+                    ],
+                    (err, data) => {
+                      if (err) {
+                        console.error(err);
+                        return res.status(500).json({ message: "Lỗi máy chủ" });
+                      }
+                    }
+                  );
                   if (completed === productsArray.length) {
                     let APP_URL = config.APP_URL;
                     return res.status(200).json({
@@ -435,7 +450,7 @@ const checkOut = (req, res) => {
     } else {
       connection.query(
         `INSERT INTO orders (user_id,address,pay,phone_number,total,status) VALUES (?,?,?,?,?,?)`,
-        [userId, fullAddress, paymentMethod, phoneNumber, total, "pending"],
+        [userId, fullAddress, paymentMethod, phoneNumber, totalSum, "pending"],
         (err, results, fields) => {
           if (err) {
             console.error(err);
@@ -515,6 +530,20 @@ const checkOut = (req, res) => {
                     return res.status(500).json({ message: "Lỗi máy chủ" });
                   }
                   completed++;
+                  connection.query(
+                    `UPDATE productDetail SET stock = stock - ?, bought = bought + ? WHERE id = ?`,
+                    [
+                      parseProduct.quantity,
+                      parseProduct.quantity,
+                      parseProduct.product_detail_id,
+                    ],
+                    (err, data) => {
+                      if (err) {
+                        console.error(err);
+                        return res.status(500).json({ message: "Lỗi máy chủ" });
+                      }
+                    }
+                  );
                   if (completed === productsArray.length) {
                     return res
                       .status(200)

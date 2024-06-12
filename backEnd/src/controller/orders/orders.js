@@ -237,9 +237,6 @@ const getAll = (req, res) => {
       if (data.length > 0) {
         console.log(data);
         const transformedData = data.map((item) => {
-          const pay = item.pay
-            .replace(/_/g, " ")
-            .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
           const createdAt = new Date(item.created_at).toLocaleDateString(
             "vi-VN",
             {
@@ -250,7 +247,6 @@ const getAll = (req, res) => {
           );
           return {
             ...item,
-            pay: pay,
             created_at: createdAt,
           };
         });
@@ -346,6 +342,79 @@ const getChart = (req, res) => {
       return res.status(500).json({ message: error });
     });
 };
+const getPie = async (req, res) => {
+  let products;
+  let total = 0;
+  let totalSell = 0;
+
+  const fetchCount = new Promise((resolve, reject) => {
+    connection.query(
+      `SELECT COUNT(id) AS total FROM products`,
+      (err, productResult) => {
+        if (err) {
+          reject("Lỗi máy chủ khi đếm số lượng sản phẩm");
+        } else {
+          total = parseInt(productResult[0].total || 0);
+          resolve();
+        }
+      }
+    );
+  });
+
+  const fetchCountSell = new Promise((resolve, reject) => {
+    connection.query(
+      `SELECT SUM(bought) AS totalSell FROM productDetail`,
+      (err, productResult) => {
+        if (err) {
+          reject("Lỗi máy chủ khi đếm số lượng sản phẩm");
+        } else {
+          totalSell = parseInt(productResult[0].totalSell || 0);
+          resolve();
+        }
+      }
+    );
+  });
+  const fetchProducts = new Promise((resolve, reject) => {
+    connection.query(
+      `SELECT c.id, COUNT(pc.product_id) AS total_products, c.category_name
+    FROM categories c
+    LEFT JOIN productCategories pc ON c.id = pc.category_id
+    GROUP BY c.id
+    HAVING total_products > 0`,
+      (err, productResult) => {
+        if (err) {
+          reject("Lỗi máy chủ khi đếm số lượng sản phẩm");
+        }
+        const transformedData = productResult.map((item) => {
+          const categoryName = item.category_name
+            .replace(/_/g, " ")
+            .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+          return {
+            ...item,
+            category_name: categoryName,
+          };
+        });
+        products = transformedData;
+        resolve();
+      }
+    );
+  });
+
+  Promise.all([fetchCount, fetchProducts, fetchCountSell])
+    .then(() => {
+      return res.status(200).json({
+        message: "Success",
+        results: {
+          products: products,
+          total: total,
+          totalSell: totalSell,
+        },
+      });
+    })
+    .catch((error) => {
+      return res.status(500).json({ message: error });
+    });
+};
 
 module.exports = {
   getOrders,
@@ -356,6 +425,7 @@ module.exports = {
   getAll,
   editStatus,
   getChart,
+  getPie,
   getOrderById,
   deleteOrderAdmin,
 };

@@ -685,22 +685,142 @@ const addressForm = (req, res) => {
     const parsedProvinces = JSON.parse(provinces);
     const parsedDistricts = JSON.parse(districts);
     const parsedWards = JSON.parse(wards);
-    const combineAddress = `${address} ${parsedWards.label},${parsedDistricts.label},${parsedProvinces.label}`;
     connection.query(
-      "UPDATE users SET address = (?),phone_number = (?) WHERE id = (?)",
-      [combineAddress, phoneNumber, id],
+      "SELECT * FROM addressInform WHERE user_id = (?)",
+      [id],
+      async function (err, data, fields) {
+        if (err) {
+          return res.status(500).json({ error: "Lỗi máy chủ" });
+        }
+        if (data.length > 0) {
+          connection.query(
+            "UPDATE addressInform SET phone_number = (?),address = (?),province = (?),district = (?),ward = (?),district_id = (?),ward_code = (?) WHERE user_id = (?)",
+            [
+              phoneNumber,
+              address,
+              parsedProvinces.label,
+              parsedDistricts.label,
+              parsedWards.label,
+              parsedDistricts.value,
+              parsedWards.value,
+              id,
+            ],
+            async function (err, results, fields) {
+              if (err) {
+                return res.status(500).json({ error: "Lỗi máy chủ" });
+              }
+              if (results) {
+                return res.status(200).json({ message: "Add Success" });
+              }
+            }
+          );
+        } else {
+          connection.query(
+            "INSERT INTO addressInform (user_id,phone_number,address,province,district,ward,district_id,ward_code) VALUES (?,?,?,?,?,?,?,?)",
+            [
+              id,
+              phoneNumber,
+              address,
+              parsedProvinces.label,
+              parsedDistricts.label,
+              parsedWards.label,
+              parsedDistricts.value,
+              parsedWards.value,
+            ],
+            async function (err, results, fields) {
+              if (err) {
+                return res.status(500).json({ error: "Lỗi máy chủ" });
+              }
+              if (results) {
+                return res.status(200).json({ message: "Add Success" });
+              }
+            }
+          );
+        }
+      }
+    );
+  }
+};
+const addComment = (req, res) => {
+  const { userId, productId, rate, comment } = req.body;
+  if (userId && productId && rate && comment) {
+    connection.query(
+      "INSERT INTO comments (user_id,product_id,comment,rate) VALUES (?,?,?,?)",
+      [userId, productId, comment, rate],
       async function (err, results, fields) {
         if (err) {
           return res.status(500).json({ error: "Lỗi máy chủ" });
         }
         if (results) {
-          return res.status(200).json({ message: "Add Success" });
+          return res.status(200).json({ message: "Comment Success" });
+        }
+      }
+    );
+  }
+};
+const viewComment = (req, res) => {
+  const id = req.params.id;
+  if (id) {
+    connection.query(
+      `SELECT comments.id,comments.comment,comments.rate,users.username,comments.created_at FROM comments 
+      INNER JOIN users ON comments.user_id = users.id
+      INNER JOIN products ON comments.product_id = products.id
+      WHERE products.id = (?)`,
+      [id],
+      async function (err, data, fields) {
+        if (err) {
+          console.log(err);
+          return res.status(500).json({ error: "Lỗi máy chủ" });
+        }
+        if (data.length > 0) {
+          const transformedData = data.map((item) => {
+            const usernameValid = item.username
+              .replace(/_/g, " ")
+              .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+            const createdAt = new Date(item.created_at).toLocaleDateString(
+              "vi-VN",
+              {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+              }
+            );
+            return {
+              ...item,
+              username: usernameValid,
+              created_at: createdAt,
+            };
+          });
+          return res
+            .status(200)
+            .json({ message: "Thành công", results: transformedData });
+        } else {
+          return res.status(200).json({ message: "Thành công", results: [] });
         }
       }
     );
   }
 };
 
+const isAddress = (req, res) => {
+  const id = req.params.id;
+  if (id) {
+    connection.query(
+      "SELECT * FROM addressInform WHERE user_id = (?)",
+      [id],
+      async function (err, data, fields) {
+        if (err) {
+          return res.status(500).json({ error: "Lỗi máy chủ" });
+        }
+        if (data.length > 0) {
+          return res
+            .status(200)
+            .json({ message: "Thành công", results: data[0] });
+        }
+      }
+    );
+  }
+};
 module.exports = {
   verifyToken,
   getUsers,
@@ -722,4 +842,7 @@ module.exports = {
   handleLoginGoogle,
   verifyGoogle,
   addressForm,
+  addComment,
+  viewComment,
+  isAddress,
 };

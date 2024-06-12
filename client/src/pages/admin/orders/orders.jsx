@@ -97,6 +97,20 @@ const Orders = () => {
             console.error(err);
           }
         }
+      } else {
+        try {
+          const res = await request.postRequest(`orders/editStatus`, {
+            id: order.id,
+            status: e.target.value,
+          });
+          // console.log(res);
+          if (res.status === 200) {
+            toast.success(res.data.message);
+            fetchOrders();
+          }
+        } catch (err) {
+          console.error(err);
+        }
       }
     }
   };
@@ -171,7 +185,7 @@ const Orders = () => {
                             <TableCell>{order.phone_number}</TableCell>
                             <TableCell>{order.total}</TableCell>
                             <TableCell>
-                              {order.pay === "Cash" ? (
+                              {order.pay === "cash" ? (
                                 <select
                                   id="status"
                                   className="form-control"

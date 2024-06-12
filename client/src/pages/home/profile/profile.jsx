@@ -24,6 +24,7 @@ const Profile = () => {
     email: "",
     phoneNumber: "",
     address: "",
+    addressO: "",
   });
   const [formDataPassword, setFormDataPassword] = useState({
     currentPassword: "",
@@ -35,26 +36,6 @@ const Profile = () => {
   };
 
   const validate = () => {
-    if (address) {
-      const errors = Validation(
-        {
-          address: address,
-        },
-        "orders"
-      );
-      let isValid = true;
-      setErrors(errors);
-
-      if (
-        Object.keys(errors).length !== 0 ||
-        !Object.values(address).every((value) => value !== "")
-      ) {
-        isValid = false;
-      }
-
-      return isValid;
-    }
-
     if (
       formDataPassword.currentPassword ||
       formDataPassword.newPassword ||
@@ -76,7 +57,8 @@ const Profile = () => {
     if (
       formDataInform.username ||
       formDataInform.email ||
-      formDataInform.name
+      formDataInform.name ||
+      formDataInform.address
     ) {
       // console.log("Ok");
       const errors = Validation(formDataInform, "informWithoutPassword");
@@ -140,7 +122,8 @@ const Profile = () => {
     if (
       formDataInform.username ||
       formDataInform.email ||
-      formDataInform.name
+      formDataInform.name ||
+      formDataInform.address
     ) {
       const isValid = validate();
       if (isValid) {
@@ -243,6 +226,7 @@ const Profile = () => {
         email: res.data.results[0].email,
         name: res.data.results[0].name || "None",
         address: res.data.results[0].address,
+        addressO: res.data.results[0].address,
         phoneNumber: res.data.results[0].phone_number || "None",
       });
     } catch (err) {
@@ -414,7 +398,7 @@ const Profile = () => {
                 </div>
                 <div className="row">
                   <div className="col-md-12">
-                    {formDataInform.address ? (
+                    {formDataInform.addressO ? (
                       <>
                         <label>Address</label>
                         <input
@@ -440,7 +424,7 @@ const Profile = () => {
                     ) : (
                       <div className="addressSection">
                         <p>
-                          No address?{" "}
+                          No address?
                           <button onClick={() => setModalAddress(true)}>
                             Add now
                           </button>

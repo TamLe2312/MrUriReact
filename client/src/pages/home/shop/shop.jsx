@@ -9,7 +9,7 @@ import { UserContext } from "../../../context/userProvider";
 import { CartContext } from "../../../context/cartProvider";
 import { toast } from "sonner";
 import ProductSkeleton from "../../../components/skeleton/productSkeleton/productSkeleton";
-import { formatNumber, truncateText } from "../../../helper/helper";
+import { formatNumber, minPrice, truncateText } from "../../../helper/helper";
 
 const Shop = () => {
   let { id } = useParams();
@@ -57,9 +57,9 @@ const Shop = () => {
         const productsArray = res.data.results.map((product) => ({
           ...product,
           images: product.images.split(","),
+          selling_price: minPrice(product.selling_price.split(",")),
           product_name: truncateText(product.product_name, 15),
         }));
-        // console.log(productsArray);
         setProducts(productsArray);
         setLoading(false);
       }
@@ -104,6 +104,7 @@ const Shop = () => {
         const productsArray = res.data.results.map((product) => ({
           ...product,
           images: product.images.split(","),
+          selling_price: minPrice(product.selling_price.split(",")),
           product_name: truncateText(product.product_name, 15),
         }));
         // console.log(productsArray);

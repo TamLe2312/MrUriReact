@@ -8,6 +8,44 @@ const getCategories = (req, res) => {
       SELECT c.*, p.category_name AS parent_category_name
       FROM categories c
       LEFT JOIN categories p ON c.parent_category = p.id
+      WHERE c.status = 1
+    `,
+    (err, data) => {
+      if (err) {
+        console.log(err);
+        return res.status(500).json({ message: "Lỗi máy chủ" });
+      }
+      if (data.length > 0) {
+        const transformedData = data.map((item) => {
+          const categoryName = item.category_name
+            .replace(/_/g, " ")
+            .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+          const parentCategoryName = item.parent_category_name
+            ? item.parent_category_name
+                .replace(/_/g, " ")
+                .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase())
+            : null;
+          return {
+            ...item,
+            category_name: categoryName,
+            parent_category_name: parentCategoryName,
+          };
+        });
+        return res
+          .status(200)
+          .json({ message: "Success", results: transformedData });
+      } else {
+        return res.status(200).json({ message: "Success", results: [] });
+      }
+    }
+  );
+};
+const getCategoriesAdmin = (req, res) => {
+  connection.query(
+    `
+      SELECT c.*, p.category_name AS parent_category_name
+      FROM categories c
+      LEFT JOIN categories p ON c.parent_category = p.id
     `,
     (err, data) => {
       if (err) {
@@ -142,27 +180,29 @@ const getProducts = (req, res) => {
         orderByClause = "ORDER BY products.id";
         break;
       case "lowToHigh":
-        orderByClause = "ORDER BY products.selling_price ASC";
+        orderByClause = "ORDER BY productDetail.selling_price ASC";
         break;
       case "highToLow":
-        orderByClause = "ORDER BY products.selling_price DESC";
+        orderByClause = "ORDER BY productDetail.selling_price DESC";
         break;
       default:
         return res.status(400).json({ message: "Loại sắp xếp không hợp lệ" });
     }
     connection.query(
-      `SELECT products.id,
+      `SELECT 
+      products.id,
       products.product_name,
-      products.selling_price,
-      products.status,
+      GROUP_CONCAT(DISTINCT productDetail.selling_price) AS selling_price,
       GROUP_CONCAT(images.image_name) AS images
-      FROM productCategories
+      FROM products
+      INNER JOIN productCategories ON productCategories.product_id = products.id
       INNER JOIN categories ON productCategories.category_id = categories.id
-      INNER JOIN products ON productCategories.product_id = products.id
+      INNER JOIN productDetail ON products.id = productDetail.product_id
       INNER JOIN images ON products.id = images.product_id 
-      WHERE categories.category_slug = (?)
+      WHERE categories.category_slug = ?
       GROUP BY products.id
-      ${orderByClause}`,
+      ${orderByClause};
+`,
       [slug],
       (err, data) => {
         if (err) {
@@ -196,34 +236,17 @@ const editCategory = (req, res) => {
   const id = req.params.id;
   if (categoryName && categorySlug && categoryParent && status && id) {
     const categoryNameValid = categoryName.toLowerCase().replace(/\s+/g, "_");
-    let categoryExists = false;
-    connection.query(`SELECT category_name FROM categories`, (err, data) => {
-      if (err) {
-        return res.status(500).json({ message: "Lỗi máy chủ" });
+    connection.query(
+      `UPDATE categories SET category_name = (?),category_slug = (?),parent_category = (?),status = (?) WHERE id = (?)`,
+      [categoryNameValid, categorySlug, categoryParent, status, id],
+      (err, data) => {
+        if (err) {
+          console.log(err);
+          return res.status(500).json({ message: "Lỗi máy chủ" });
+        }
+        return res.status(200).json({ message: "Edit Success" });
       }
-      if (data.length > 0) {
-        data.forEach((child) => {
-          if (child.category_name === categoryNameValid) {
-            categoryExists = true;
-          }
-        });
-      }
-      if (categoryExists) {
-        return res.status(400).json({ message: "Category name had exist" });
-      } else {
-        connection.query(
-          `UPDATE categories SET category_name = (?),category_slug = (?),parent_category = (?),status = (?) WHERE id = (?)`,
-          [categoryNameValid, categorySlug, categoryParent, status, id],
-          (err, data) => {
-            if (err) {
-              console.log(err);
-              return res.status(500).json({ message: "Lỗi máy chủ" });
-            }
-            return res.status(200).json({ message: "Edit Success" });
-          }
-        );
-      }
-    });
+    );
   }
 };
 const relatedCategories = (req, res) => {
@@ -370,6 +393,7 @@ LIMIT 4;
 
 module.exports = {
   getCategories,
+  getCategoriesAdmin,
   getParentCategories,
   deleteCategory,
   addCategory,

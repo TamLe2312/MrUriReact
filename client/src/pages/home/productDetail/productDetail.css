@@ -148,3 +148,9 @@
   background-color: #b0b3b8 !important;
   color: #000 !important;
 }
+.rating input[type="radio"] {
+  display: none;
+}
+.rating .star {
+  cursor: pointer;
+}

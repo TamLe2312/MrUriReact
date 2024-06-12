@@ -50,3 +50,30 @@
   color: #4ea8cd;
   padding-left: 8px;
 }
+.cartImgContainer {
+  width: 80px;
+  height: 80px;
+}
+.cartImgContainer img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.addressSection {
+  margin: 12px auto;
+}
+.addressSection > p {
+  margin: 0;
+  padding: 0;
+}
+.addressSection > p > button {
+  border: none;
+  background: transparent;
+  outline: none;
+}
+.addressSection > p > button:hover {
+  color: #1976d2;
+}
+.table-responsive {
+  overflow-x: hidden;
+}

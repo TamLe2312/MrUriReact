@@ -623,10 +623,11 @@ const handleLoginGoogle = (req, res) => {
   const { displayName, email, localId, photoUrl } = req.body.user;
   if (displayName && email && localId && photoUrl) {
     connection.query(
-      `SELECT * FROM users WHERE username = (?)`,
-      [localId],
+      `SELECT * FROM users WHERE username = (?) OR googleId = (?)`,
+      [localId, localId],
       (err, data) => {
         if (err) {
+          console.log(err);
           return res.status(500).json({ message: "Lỗi máy chủ" });
         }
         if (data.length > 0) {
@@ -666,14 +667,13 @@ const verifyGoogle = (req, res) => {
     connection.query(
       "SELECT id,role FROM users WHERE username = ? OR googleId = (?)",
       [localId, localId],
-      async function (err, results, fields) {
+      async function (err, data, fields) {
         if (err) {
+          console.log(err);
           return res.status(500).json({ error: "Lỗi máy chủ" });
         }
-        if (results.length > 0) {
-          return res
-            .status(200)
-            .json({ mesage: "Success", results: results[0] });
+        if (data.length > 0) {
+          return res.status(200).json({ mesage: "Success", results: data[0] });
         }
       }
     );
@@ -753,6 +753,60 @@ const addComment = (req, res) => {
         }
         if (results) {
           return res.status(200).json({ message: "Comment Success" });
+        }
+      }
+    );
+  }
+};
+const viewCommentById = (req, res) => {
+  const id = req.params.id;
+  if (id) {
+    connection.query(
+      `SELECT 
+        comments.id,
+        users.username,
+        comments.comment,
+        comments.rate,
+        comments.created_at
+        FROM comments 
+        INNER JOIN users ON users.id = comments.user_id
+        WHERE comments.product_id = (?)`,
+      [id],
+      async function (err, data, fields) {
+        if (err) {
+          return res.status(500).json({ error: "Lỗi máy chủ" });
+        }
+        if (data.length > 0) {
+          const transformedData = data.map((item) => {
+            const usernameValid = item.username
+              .replace(/_/g, " ")
+              .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+            return {
+              ...item,
+              username: usernameValid,
+            };
+          });
+          return res
+            .status(200)
+            .json({ message: "Thành công", results: transformedData });
+        }
+      }
+    );
+  }
+};
+const deleteComment = (req, res) => {
+  const id = req.params.id;
+  if (id) {
+    connection.query(
+      "DELETE FROM comments WHERE id = (?)",
+      [id],
+      async function (err, results, fields) {
+        if (err) {
+          console.log(err);
+          return res.status(500).json({ error: "Lỗi máy chủ" });
+        }
+        if (results) {
+          return res.status(200).json({ message: "Delete Success" });
         }
       }
     );
@@ -844,5 +898,7 @@ module.exports = {
   addressForm,
   addComment,
   viewComment,
+  viewCommentById,
   isAddress,
+  deleteComment,
 };

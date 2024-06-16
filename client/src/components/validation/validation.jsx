@@ -117,8 +117,8 @@ const Validation = (value, type) => {
       errors.confirmPassword = "Password must be the same";
     }
   } else if (type === "orders") {
-    if (!value.address) {
-      errors.address = "Address cannot be empty";
+    if (!value.addressOrder) {
+      errors.addressOrder = "Address cannot be empty";
     }
   } else if (type === "editProduct") {
     if (!value.product_name) {

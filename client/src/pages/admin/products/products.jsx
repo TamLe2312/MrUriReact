@@ -96,11 +96,11 @@ const Products = () => {
       console.error(err);
     }
   };
+  const handleComment = (product) => {
+    navigate(`/dashboard/products/comments/${product}`);
+  };
   const handleEdit = (product) => {
     navigate(`/dashboard/products/edit/${product}`);
-  };
-  const handleView = (product) => {
-    navigate(`/dashboard/products/view/${product}`);
   };
 
   useEffect(() => {
@@ -169,16 +169,16 @@ const Products = () => {
                                 &nbsp;
                                 <button
                                   className="btn btn-success"
-                                  onClick={() => handleView(product.id)}
+                                  onClick={() => handleEdit(product.id)}
                                 >
-                                  View
+                                  Edit
                                 </button>
                                 &nbsp;
                                 <button
                                   className="btn btn-primary"
-                                  onClick={() => handleEdit(product.id)}
+                                  onClick={() => handleComment(product.id)}
                                 >
-                                  Edit
+                                  Comments
                                 </button>
                               </div>
                             </TableCell>

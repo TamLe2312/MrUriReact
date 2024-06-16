@@ -60,5 +60,11 @@ export const secondaryListItems = (
       </ListItemIcon>
       <ListItemText primary="Variation" />
     </ListItemButton>
+    <ListItemButton component={Link} to="/dashboard/product-stock">
+      <ListItemIcon>
+        <AssignmentIcon />
+      </ListItemIcon>
+      <ListItemText primary="Product Stock" />
+    </ListItemButton>
   </React.Fragment>
 );

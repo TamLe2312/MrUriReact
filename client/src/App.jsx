@@ -25,8 +25,8 @@ const LazyCategories = lazy(() =>
 );
 const LazyAddProduct = lazy(() => import("./pages/admin/products/addProduct"));
 const LazyProducts = lazy(() => import("./pages/admin/products/products"));
-const LazyEditProduct = lazy(() =>
-  import("./pages/admin/products/editProduct")
+const LazyCommentProduct = lazy(() =>
+  import("./pages/admin/products/comments")
 );
 const LazyOrders = lazy(() => import("./pages/admin/orders/orders"));
 const LazySliders = lazy(() => import("./pages/admin/sliders/sliders"));
@@ -40,6 +40,9 @@ const LazyProductView = lazy(() =>
   import("./pages/admin/products/productDetail")
 );
 const LazyVariation = lazy(() => import("./pages/admin/variation/variation"));
+const LazyProductStock = lazy(() =>
+  import("./pages/admin/productStock/productStock")
+);
 import AddProduct from "./pages/admin/products/addProduct"; //KHÔNG ĐƯỢC XÓA,XÓA LÀ LỖI (DUNNO WHY SORRY)
 
 import Loading from "./components/loading/Loading";
@@ -180,7 +183,7 @@ function App() {
               }
             />
             <Route
-              path="view/:id"
+              path="edit/:id"
               element={
                 <Suspense fallback={<Loading />}>
                   <LazyProductView />
@@ -188,10 +191,10 @@ function App() {
               }
             />
             <Route
-              path="edit/:id"
+              path="comments/:id"
               element={
                 <Suspense fallback={<Loading />}>
-                  <LazyEditProduct />
+                  <LazyCommentProduct />
                 </Suspense>
               }
             />
@@ -217,6 +220,14 @@ function App() {
             element={
               <Suspense fallback={<Loading />}>
                 <LazyVariation />
+              </Suspense>
+            }
+          />
+          <Route
+            path="product-stock"
+            element={
+              <Suspense fallback={<Loading />}>
+                <LazyProductStock />
               </Suspense>
             }
           />

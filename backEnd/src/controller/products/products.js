@@ -470,14 +470,25 @@ const productViewById = (req, res) => {
   const id = req.params.id;
   if (id) {
     connection.query(
-      `SELECT products.*, 
-        (SELECT GROUP_CONCAT(images.image_name) FROM images WHERE products.id = images.product_id) AS images,
-        (SELECT GROUP_CONCAT(CONCAT(categories.category_name, ':', categories.id)) FROM categories INNER JOIN productCategories ON categories.id = productCategories.category_id WHERE products.id = productCategories.product_id) AS category_names
-      FROM products 
-      LEFT JOIN productCategories ON products.id = productCategories.product_id
-      LEFT JOIN categories ON productCategories.category_id = categories.id
-      WHERE products.id = (?)
-      `,
+      `SELECT 
+    products.id AS product_id,
+    products.product_name,
+    products.product_description,
+    products.created_at,
+    GROUP_CONCAT(images.image_name) AS images,
+    (SELECT GROUP_CONCAT(CONCAT(categories.category_name, ':', categories.id) ORDER BY categories.id SEPARATOR ', ')
+      FROM categories
+      INNER JOIN productCategories ON categories.id = productCategories.category_id
+      WHERE productCategories.product_id = products.id) AS category_names
+FROM 
+    products
+INNER JOIN 
+    images ON products.id = images.product_id
+WHERE 
+    products.id = (?)
+GROUP BY 
+    products.id, products.product_name, products.product_description, products.created_at
+`,
       [id],
       function (err, data) {
         if (err) {
@@ -486,16 +497,23 @@ const productViewById = (req, res) => {
             .status(500)
             .json({ error: "Có lỗi xảy ra xin thử lại sau" });
         }
+
         if (data.length > 0) {
           const transformedData = data.map((item) => {
             const productName = item.product_name
               .replace(/_/g, " ")
               .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
-            const status = item.status
-              .replace(/_/g, " ")
-              .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+            const createdAt = new Date(item.created_at).toLocaleDateString(
+              "vi-VN",
+              {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+              }
+            );
+            const images = item.images.split(",");
             const categoriesArray = item.category_names
-              .split(",")
+              .split(", ")
               .map((category) => {
                 const [categoryName, categoryId] = category.split(":");
                 return {
@@ -505,21 +523,11 @@ const productViewById = (req, res) => {
                   value: parseInt(categoryId),
                 };
               });
-
-            const createdAt = new Date(item.created_at).toLocaleDateString(
-              "vi-VN",
-              {
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric",
-              }
-            );
-
             return {
               ...item,
               product_name: productName,
               created_at: createdAt,
-              status: status,
+              images: images,
               category_names: categoriesArray,
             };
           });
@@ -588,6 +596,78 @@ const productViewById = (req, res) => {
         }
       }
     );
+  }
+};
+const getVariants = (req, res) => {
+  const id = req.params.id;
+  if (id) {
+    const sql = `
+      SELECT 
+        products.id AS product_id,
+        productDetail.id AS product_detail_id,
+        productDetail.selling_price,
+        productDetail.status,
+        productDetail.stock,
+        variation.id AS variation,
+        variationOption.id AS variationO_id,
+        variation.name AS variation_name,
+        variationOption.value AS variation_value
+      FROM 
+        products
+      INNER JOIN 
+        productDetail ON products.id = productDetail.product_id
+      INNER JOIN 
+        productConfiguration ON productDetail.id = productConfiguration.product_detail_id
+      INNER JOIN 
+        variationOption ON productConfiguration.variation_option_id = variationOption.id
+      INNER JOIN 
+        variation ON variationOption.variation_id = variation.id
+      WHERE 
+        products.id = (?)
+      ORDER BY 
+        products.id, productDetail.id, variation.name;
+    `;
+
+    connection.query(sql, [id], (err, data) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ message: "Lỗi máy chủ" });
+      }
+
+      if (data.length > 0) {
+        const productMap = {};
+        data.forEach((item) => {
+          const productId = item.product_id;
+          if (!productMap[productId]) {
+            productMap[productId] = {
+              variants: [],
+            };
+          }
+
+          productMap[productId].variants.push({
+            product_detail_id: item.product_detail_id,
+            selling_price: item.selling_price,
+            stock: item.stock,
+            status: item.status,
+            variation: item.variation,
+            variationO_id: item.variationO_id,
+            variation_name: item.variation_name
+              .replace(/_/g, " ")
+              .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase()),
+            variation_value: item.variation_value,
+          });
+        });
+
+        // Chuyển đổi productMap thành mảng
+        const transformedData = Object.values(productMap);
+
+        return res
+          .status(200)
+          .json({ message: "Thành công", results: transformedData });
+      } else {
+        return res.status(404).json({ message: "Không tìm thấy sản phẩm" });
+      }
+    });
   }
 };
 
@@ -726,30 +806,19 @@ const redirectCategory = (req, res) => {
   }
 };
 const editProduct = (req, res) => {
-  const {
-    id,
-    product_name,
-    product_description,
-    stock,
-    category_names,
-    selling_price,
-    imported_price,
-    status,
-  } = req.body;
+  const { id, product_name, product_description, category_names, variations } =
+    req.body;
   if (
     id &&
     product_name &&
     product_description &&
-    stock &&
     category_names &&
-    selling_price &&
-    imported_price &&
-    status
+    variations
   ) {
-    // Lấy danh sách id của các danh mục mới
-    const newCategoryIds = category_names.map((category) => category.value);
-
-    // Lấy danh sách id của các danh mục hiện tại trong productCategories
+    const parsedCategoryNames = JSON.parse(category_names);
+    const newCategoryIds = parsedCategoryNames.map(
+      (category) => category.value
+    );
     connection.query(
       `SELECT category_id FROM productCategories WHERE product_id = ?`,
       [id],
@@ -758,7 +827,6 @@ const editProduct = (req, res) => {
           console.log(err);
           return res.status(500).json({ message: "Lỗi máy chủ" });
         }
-
         // Lấy danh sách id của các danh mục hiện tại
         const currentCategoryIds = currentCategories.map(
           (item) => item.category_id
@@ -810,27 +878,309 @@ const editProduct = (req, res) => {
         const productNameValid = product_name
           .toLowerCase()
           .replace(/\s+/g, "_");
-        const stockValid = parseInt(stock);
-        const sellingPriceValid = parseFloat(selling_price);
-        const importedPriceValid = parseFloat(imported_price);
         connection.query(
-          `UPDATE products SET product_name = (?),product_description = (?),stock = (?),selling_price = (?),imported_price = (?),status = (?) WHERE id = (?)`,
-          [
-            productNameValid,
-            product_description,
-            stockValid,
-            sellingPriceValid,
-            importedPriceValid,
-            status,
-            id,
-          ],
+          `UPDATE products SET product_name = (?),product_description = (?) WHERE id = (?)`,
+          [productNameValid, product_description, id],
           (err, results) => {
             if (err) {
               console.log(err);
               return res.status(500).json({ message: "Lỗi máy chủ" });
             }
             if (results) {
-              return res.status(200).json({ message: "Edit success" });
+              connection.query(
+                `SELECT id  as product_detail_id FROM productDetail WHERE product_id = ?`,
+                [id],
+                (err, data) => {
+                  const currentProductDetailId = data.map(
+                    (item) => item.product_detail_id
+                  );
+                  if (Array.isArray(variations) && variations.length > 1) {
+                    const parsedVariations = variations.map((variation) =>
+                      JSON.parse(variation)
+                    );
+                    // console.log(parsedVariations);
+                    parsedVariations.forEach((variation) => {
+                      connection.query(
+                        "UPDATE productDetail SET selling_price = (?),stock = (?) ,status = (?) WHERE id = (?)",
+                        [
+                          variation.selling_price,
+                          variation.stock,
+                          variation.status,
+                          variation.product_detail_id,
+                        ],
+                        function (err, results, fields) {
+                          if (err) {
+                            console.error(err);
+                            return res.status(500).json({
+                              error: "Có lỗi xảy ra xin thử lại sau",
+                            });
+                          }
+                          if (results) {
+                            connection.query(
+                              "UPDATE variationOption SET variation_id = (?),value = (?) WHERE id = (?)",
+                              [
+                                variation.variation,
+                                variation.variation_value,
+                                variation.variationO_id,
+                              ],
+                              function (err, resultsVariationOption, fields) {
+                                if (err) {
+                                  return res.status(500).json({
+                                    error: "Có lỗi xảy ra xin thử lại sau",
+                                  });
+                                }
+                              }
+                            );
+                          }
+                        }
+                      );
+                    });
+                    // Extract the current product detail IDs from parsed variations
+                    const parsedProductDetailIds = parsedVariations.map(
+                      (variation) => variation.product_detail_id
+                    );
+
+                    // Find product details to add
+                    const productDetailToAdd = parsedVariations.filter(
+                      (variation) =>
+                        !currentProductDetailId.includes(
+                          variation.product_detail_id
+                        )
+                    );
+                    const productDetailToDelete = currentProductDetailId.filter(
+                      (id) => !parsedProductDetailIds.includes(id)
+                    );
+                    if (productDetailToAdd.length > 0) {
+                      const addQuery = `
+    INSERT INTO productDetail (product_id, selling_price, stock, status)
+    VALUES ?`;
+
+                      const addValues = productDetailToAdd.map((product) => [
+                        id,
+                        product.selling_price,
+                        product.stock,
+                        product.status,
+                      ]);
+
+                      connection.query(
+                        addQuery,
+                        [addValues],
+                        (err, addResults) => {
+                          if (err) {
+                            console.log(err);
+                            return res.status(500).json({
+                              message:
+                                "Server error when adding product details",
+                            });
+                          }
+
+                          const lastIdProductDetail = addResults.insertId;
+
+                          // Lặp qua các sản phẩm chi tiết để thêm vào bảng variationOption và productConfiguration
+                          productDetailToAdd.forEach((product) => {
+                            connection.query(
+                              "INSERT INTO variationOption (variation_id, value) VALUES (?, ?)",
+                              [product.variation, product.variation_value],
+                              function (err, resultsVariationOption) {
+                                if (err) {
+                                  return res.status(500).json({
+                                    error: "Có lỗi xảy ra xin thử lại sau",
+                                  });
+                                }
+                                if (resultsVariationOption) {
+                                  const lastIdVariationOption =
+                                    resultsVariationOption.insertId;
+                                  connection.query(
+                                    "INSERT INTO productConfiguration (product_detail_id, variation_option_id) VALUES (?, ?)",
+                                    [
+                                      lastIdProductDetail,
+                                      lastIdVariationOption,
+                                    ],
+                                    function (err, results) {
+                                      if (err) {
+                                        console.error(err);
+                                        return res.status(500).json({
+                                          error:
+                                            "Có lỗi xảy ra xin thử lại sau",
+                                        });
+                                      }
+                                    }
+                                  );
+                                }
+                              }
+                            );
+                          });
+                        }
+                      );
+                    }
+
+                    if (productDetailToDelete.length > 0) {
+                      const deleteQuery = `DELETE FROM productDetail WHERE product_id = ? AND id IN (?)`;
+                      connection.query(
+                        deleteQuery,
+                        [id, productDetailToDelete],
+                        (err, deleteResults) => {
+                          if (err) {
+                            console.log(err);
+                            return res.status(500).json({
+                              message:
+                                "Server error when deleting product details",
+                            });
+                          }
+                        }
+                      );
+                    }
+                  } else {
+                    const parsedVariations = JSON.parse(variations);
+                    connection.query(
+                      "UPDATE productDetail SET selling_price =(?),stock = (?),status = (?) WHERE id = (?)",
+                      [
+                        parsedVariations.sellingPrice,
+                        parsedVariations.stock,
+                        parsedVariations.status,
+                        parsedVariations.product_detail_id,
+                      ],
+                      function (err, results, fields) {
+                        if (err) {
+                          console.error(err);
+                          return res.status(500).json({
+                            error: "Có lỗi xảy ra xin thử lại sau",
+                          });
+                        }
+                        if (results) {
+                          connection.query(
+                            "UPDATE variationOption SET variation_id = (?),value = (?) WHERE id = (?)",
+                            [
+                              parsedVariations.variation,
+                              parsedVariations.variationValue,
+                              parsedVariations.variationO_id,
+                            ],
+                            function (err, resultsVariationOption, fields) {
+                              if (err) {
+                                return res.status(500).json({
+                                  error: "Có lỗi xảy ra xin thử lại sau",
+                                });
+                              }
+                              if (resultsVariationOption) {
+                                connection.query(
+                                  "INSERT INTO productConfiguration (product_detail_id,variation_option_id) VALUES (?,?)",
+                                  [
+                                    parsedVariations.product_detail_id,
+                                    parsedVariations.variationO_id,
+                                  ],
+                                  function (err, results, fields) {
+                                    if (err) {
+                                      console.error(err);
+                                      return res.status(500).json({
+                                        error: "Có lỗi xảy ra xin thử lại sau",
+                                      });
+                                    }
+                                  }
+                                );
+                              }
+                            }
+                          );
+                        }
+                      }
+                    );
+                    const parsedProductDetailIds =
+                      parsedVariations.product_detail_id;
+                    // Find product details to add
+                    const productDetailToAdd = parsedVariations.filter(
+                      (variation) =>
+                        !currentProductDetailId.includes(
+                          variation.product_detail_id
+                        )
+                    );
+
+                    const productDetailToDelete = currentProductDetailId.filter(
+                      (id) => !parsedProductDetailIds.includes(id)
+                    );
+
+                    if (productDetailToAdd.length > 0) {
+                      const addQuery = `
+    INSERT INTO productDetail (product_id, selling_price, stock, status)
+    VALUES ?`;
+
+                      const addValues = productDetailToAdd.map((product) => [
+                        id,
+                        product.selling_price,
+                        product.stock,
+                        product.status,
+                      ]);
+
+                      connection.query(
+                        addQuery,
+                        [addValues],
+                        (err, addResults) => {
+                          if (err) {
+                            console.log(err);
+                            return res.status(500).json({
+                              message:
+                                "Server error when adding product details",
+                            });
+                          }
+
+                          const lastIdProductDetail = addResults.insertId;
+
+                          // Lặp qua các sản phẩm chi tiết để thêm vào bảng variationOption và productConfiguration
+                          productDetailToAdd.forEach((product) => {
+                            connection.query(
+                              "INSERT INTO variationOption (variation_id, value) VALUES (?, ?)",
+                              [product.variation, product.variation_value],
+                              function (err, resultsVariationOption) {
+                                if (err) {
+                                  return res.status(500).json({
+                                    error: "Có lỗi xảy ra xin thử lại sau",
+                                  });
+                                }
+                                if (resultsVariationOption) {
+                                  const lastIdVariationOption =
+                                    resultsVariationOption.insertId;
+                                  connection.query(
+                                    "INSERT INTO productConfiguration (product_detail_id, variation_option_id) VALUES (?, ?)",
+                                    [
+                                      lastIdProductDetail,
+                                      lastIdVariationOption,
+                                    ],
+                                    function (err, results) {
+                                      if (err) {
+                                        console.error(err);
+                                        return res.status(500).json({
+                                          error:
+                                            "Có lỗi xảy ra xin thử lại sau",
+                                        });
+                                      }
+                                    }
+                                  );
+                                }
+                              }
+                            );
+                          });
+                        }
+                      );
+                    }
+
+                    if (productDetailToDelete.length > 0) {
+                      const deleteQuery = `DELETE FROM productDetail WHERE product_id = ? AND id IN (?)`;
+                      connection.query(
+                        deleteQuery,
+                        [id, productDetailToDelete],
+                        (err, deleteResults) => {
+                          if (err) {
+                            console.log(err);
+                            return res.status(500).json({
+                              message:
+                                "Server error when deleting product details",
+                            });
+                          }
+                        }
+                      );
+                    }
+                  }
+                  return res.status(200).json({ message: "Edit success" });
+                }
+              );
             }
           }
         );
@@ -1029,6 +1379,67 @@ const searchProducts = (req, res) => {
     return res.status(400).json({ message: "Không có search", results: [] });
   }
 };
+const getStock = (req, res) => {
+  const sql = `
+     SELECT 
+    products.id AS product_id,
+    products.product_name,
+    productDetail.id AS product_detail_id,
+    productDetail.stock,
+    products.created_at
+FROM 
+    products
+INNER JOIN 
+    productDetail ON products.id = productDetail.product_id
+ORDER BY 
+    products.id;
+    `;
+
+  connection.query(sql, (err, data) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ message: "Lỗi máy chủ" });
+    }
+    if (data.length > 0) {
+      const productMap = {};
+      data.forEach((item) => {
+        const productId = item.product_id;
+        const createdAt = new Date(item.created_at).toLocaleDateString(
+          "vi-VN",
+          {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+          }
+        );
+        if (!productMap[productId]) {
+          productMap[productId] = {
+            product_id: productId,
+            product_name: item.product_name
+              .replace(/_/g, " ")
+              .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase()),
+            created_at: createdAt,
+            variants: [],
+          };
+        }
+
+        productMap[productId].variants.push({
+          product_detail_id: item.product_detail_id,
+          stock: item.stock,
+        });
+      });
+
+      // Chuyển đổi productMap thành mảng
+      const transformedData = Object.values(productMap);
+
+      return res
+        .status(200)
+        .json({ message: "Thành công", results: transformedData });
+    } else {
+      return res.status(404).json({ message: "Không tìm thấy sản phẩm" });
+    }
+  });
+};
 
 module.exports = {
   getProducts,
@@ -1047,4 +1458,6 @@ module.exports = {
   deleteProduct,
   searchProducts,
   viewProductsByCategory,
+  getVariants,
+  getStock,
 };

@@ -1,0 +1,22 @@
+@keyframes example {
+  0% {
+    background-color: rgb(240, 240, 240);
+  }
+  50% {
+    background-color: rgb(220, 220, 220);
+  }
+  100% {
+    background-color: rgb(240, 240, 240);
+  }
+}
+
+.skeletonRow5Container .skeletonRow5Item {
+  padding: 16px;
+}
+.loader {
+  background-color: rgb(255, 255, 255);
+  height: 35px;
+  border-radius: 6px;
+  width: 100%;
+  animation: example 1.5s infinite;
+}

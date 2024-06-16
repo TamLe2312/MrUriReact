@@ -317,9 +317,11 @@ const relatedCategoriesDetail = (req, res) => {
 };
 
 const categoriesProductView = (req, res) => {
-  const { categories } = req.body;
-  if (categories && categories.length > 0) {
-    const categoryIds = categories.map((category) => category.value).join(",");
+  const { category_names } = req.body;
+  if (category_names && category_names.length > 0) {
+    const categoryIds = category_names
+      .map((category) => category.value)
+      .join(",");
     connection.query(
       `SELECT c.id as value,c.category_name as label,c.status,p.category_name AS parent_category_name
             FROM categories c
@@ -346,9 +348,10 @@ const categoriesProductView = (req, res) => {
               parent_category_name: parentCategoryName,
             };
           });
-          return res
-            .status(200)
-            .json({ message: "Success", results: transformedData });
+          return res.status(200).json({
+            message: "Success",
+            results: transformedData,
+          });
         }
       }
     );

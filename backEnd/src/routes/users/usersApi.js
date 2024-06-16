@@ -24,6 +24,8 @@ const {
   addComment,
   viewComment,
   isAddress,
+  viewCommentById,
+  deleteComment,
 } = require("../../controller/users/users");
 const Router = express.Router();
 
@@ -53,6 +55,8 @@ Router.post("/addSlide", upload.single("image"), addSlide);
 Router.post("/verifyToken", verifyToken);
 Router.post("/add", addUser);
 Router.post("/comment", addComment);
+Router.get("/comment/:id", viewCommentById);
+Router.delete("/deleteComment/:id", deleteComment);
 Router.get("/viewComment/:id", viewComment);
 Router.post("/profile", editProfile);
 Router.post("/profilePassword", editPassword);

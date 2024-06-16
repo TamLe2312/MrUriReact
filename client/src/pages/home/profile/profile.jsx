@@ -36,6 +36,25 @@ const Profile = () => {
   };
 
   const validate = () => {
+    if (address) {
+      // console.log("Ok");
+      const errors = Validation(
+        {
+          addressOrder: address,
+        },
+        "orders"
+      );
+      let isValid = true;
+      setErrors((prevErrors) => ({ ...prevErrors, ...errors }));
+      if (
+        Object.keys(errors).length !== 0 ||
+        !Object.values(formDataInform).every((value) => value !== "")
+      ) {
+        isValid = false;
+      }
+
+      return isValid;
+    }
     if (
       formDataPassword.currentPassword ||
       formDataPassword.newPassword ||
@@ -258,6 +277,7 @@ const Profile = () => {
         /* console.log(res);
         setUser(res.data.results); */
         handleSet(res.data.results);
+        fetchOrders(res.data.results);
         fetchInform(res.data.results);
       }
     } catch (err) {
@@ -552,7 +572,7 @@ const Profile = () => {
                                   <input
                                     type="text"
                                     className={
-                                      errors.address
+                                      errors.addressOrder
                                         ? "form-control is-invalid"
                                         : "form-control"
                                     }
@@ -560,12 +580,12 @@ const Profile = () => {
                                     defaultValue={order.address}
                                     onChange={handleChange}
                                   />
-                                  {errors.address && (
+                                  {errors.addressOrder && (
                                     <div
                                       id="validationServerBrandFeedback"
                                       className="invalid-feedback"
                                     >
-                                      {errors.address}
+                                      {errors.addressOrder}
                                     </div>
                                   )}
                                 </>

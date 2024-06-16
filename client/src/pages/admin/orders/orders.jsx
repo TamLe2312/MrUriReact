@@ -55,7 +55,7 @@ const Orders = () => {
   };
 
   const handleChange = async (e, order) => {
-    if (order.pay === "Vnpay") {
+    if (order.pay === "vnpay") {
       if (e.target.value === "pending" || e.target.value === "cancel") {
         toast.error(`Can't change status to ${e.target.value}`);
       } else {

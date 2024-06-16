@@ -98,7 +98,7 @@ const ProductStockPie = () => {
         </div>
       </div>
       <div className="chart col-md-12">
-        <Title>Product Stock</Title>
+        <Title>Product Categories</Title>
         <Pie className="chart_pie" data={data} />
       </div>
     </div>

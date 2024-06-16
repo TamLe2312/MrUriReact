@@ -1,6 +1,8 @@
 const connection = require("../../config/database");
 const moment = require("moment");
-
+const fs = require("fs");
+const Mustache = require("mustache");
+const mailer = require("../../utils/mailer");
 require("dotenv").config();
 
 const getOrders = (req, res) => {
@@ -235,7 +237,6 @@ const getAll = (req, res) => {
         return res.status(500).json({ message: "Lỗi máy chủ" });
       }
       if (data.length > 0) {
-        console.log(data);
         const transformedData = data.map((item) => {
           const createdAt = new Date(item.created_at).toLocaleDateString(
             "vi-VN",
@@ -269,7 +270,111 @@ const editStatus = (req, res) => {
           return res.status(500).json({ message: "Lỗi máy chủ" });
         }
         if (results) {
-          return res.status(200).json({ message: "Edit success" });
+          connection.query(
+            `SELECT send_mail FROM orders WHERE id = (?) `,
+            [id],
+            (err, data, fields) => {
+              if (err) {
+                return res.status(500).json({ message: "Lỗi máy chủ" });
+              }
+              if (data.length > 0) {
+                if (data[0].send_mail === 0) {
+                  connection.query(
+                    `SELECT 
+    users.email, 
+      products.product_name,
+    orders.total,
+    orders.address, 
+    order_details.product_detail_id, 
+    order_details.price, 
+    order_details.quantity, 
+      variation.name AS variation_name,
+    variationOption.value AS variation_value
+FROM orders 
+INNER JOIN users ON orders.user_id = users.id 
+INNER JOIN order_details ON orders.id = order_details.order_id 
+INNER JOIN products ON order_details.product_id = products.id 
+INNER JOIN productDetail ON order_details.product_detail_id = productDetail.id
+INNER JOIN productConfiguration ON productDetail.id = productConfiguration.product_detail_id
+INNER JOIN variationOption ON productConfiguration.variation_option_id = variationOption.id
+INNER JOIN variation ON variationOption.variation_id = variation.id
+WHERE orders.id = (?)
+ORDER BY products.id, order_details.product_detail_id
+`,
+                    [id],
+                    (err, results, fields) => {
+                      if (err) {
+                        return res.status(500).json({ message: "Lỗi máy chủ" });
+                      }
+                      const orderDetails = {
+                        email: results[0].email,
+                        total: results[0].total,
+                        address: results[0].address,
+                        orderItems: [],
+                      };
+
+                      results.forEach((row) => {
+                        const productName = row.product_name
+                          .replace(/_/g, " ")
+                          .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+                        const variationName = row.variation_name
+                          .replace(/_/g, " ")
+                          .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+                        const variationValue = row.variation_value
+                          .replace(/_/g, " ")
+                          .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+                        const orderItem = {
+                          price: row.price,
+                          quantity: row.quantity,
+                          productName: productName,
+                          variation_name: variationName,
+                          variation_value: variationValue,
+                        };
+                        orderDetails.orderItems.push(orderItem);
+                      });
+                      const filePath =
+                        "../backEnd/src/public/html/OrderInformation.html";
+                      fs.readFile(filePath, "utf8", (err, content) => {
+                        if (err) {
+                          console.error(`Đã xảy ra lỗi khi đọc file: ${err}`);
+                          return;
+                        }
+                        let data = {
+                          email: orderDetails.email,
+                          total: orderDetails.total,
+                          address: orderDetails.address,
+                          orderDetails: orderDetails.orderItems,
+                        };
+                        // console.log(data);
+                        let htmlContent = Mustache.render(content, data);
+                        mailer.sendMail(
+                          data.email,
+                          "Order Information",
+                          htmlContent
+                        );
+                        connection.query(
+                          `UPDATE orders SET send_mail = (?) WHERE id = (?)`,
+                          [1, id],
+                          (err, results, fields) => {
+                            if (err) {
+                              return res
+                                .status(500)
+                                .json({ message: "Lỗi máy chủ" });
+                            }
+                            if (results) {
+                              return res
+                                .status(200)
+                                .json({ message: "Edit success" });
+                            }
+                          }
+                        );
+                      });
+                    }
+                  );
+                }
+              }
+            }
+          );
         }
       }
     );

@@ -473,7 +473,7 @@ const checkOut = (req, res) => {
             let vnpUrl = config.VNP_URL;
             let returnUrl = config.VNP_RETURNURL;
             let orderId = lastId;
-            let amount = req.body.total;
+            let amount = totalSum;
 
             let bankCode = "NCB";
 
@@ -586,12 +586,27 @@ const vnpayReturn = (req, res) => {
           return res.status(500).json({ message: "Lỗi máy chủ" });
         }
         connection.query(
-          `SELECT users.email, orders.total, orders.address, order_details.price, order_details.quantity, products.product_name
-          FROM orders 
-          INNER JOIN users ON orders.user_id = users.id 
-          INNER JOIN order_details ON orders.id = order_details.order_id 
-          INNER JOIN products ON order_details.product_id = products.id 
-          WHERE orders.id = ?`,
+          `SELECT 
+    users.email, 
+      products.product_name,
+    orders.total,
+    orders.address, 
+    order_details.product_detail_id, 
+    order_details.price, 
+    order_details.quantity, 
+      variation.name AS variation_name,
+    variationOption.value AS variation_value
+FROM orders 
+INNER JOIN users ON orders.user_id = users.id 
+INNER JOIN order_details ON orders.id = order_details.order_id 
+INNER JOIN products ON order_details.product_id = products.id 
+INNER JOIN productDetail ON order_details.product_detail_id = productDetail.id
+INNER JOIN productConfiguration ON productDetail.id = productConfiguration.product_detail_id
+INNER JOIN variationOption ON productConfiguration.variation_option_id = variationOption.id
+INNER JOIN variation ON variationOption.variation_id = variation.id
+WHERE orders.id = (?)
+ORDER BY products.id, order_details.product_detail_id
+`,
           [orderId],
           (err, results, fields) => {
             if (err) {
@@ -608,10 +623,18 @@ const vnpayReturn = (req, res) => {
               const productName = row.product_name
                 .replace(/_/g, " ")
                 .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+              const variationName = row.variation_name
+                .replace(/_/g, " ")
+                .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+              const variationValue = row.variation_value
+                .replace(/_/g, " ")
+                .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
               const orderItem = {
                 price: row.price,
                 quantity: row.quantity,
                 productName: productName,
+                variation_name: variationName,
+                variation_value: variationValue,
               };
               orderDetails.orderItems.push(orderItem);
             });

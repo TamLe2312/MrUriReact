@@ -578,7 +578,6 @@ const AddProduct = () => {
                         )}
                     </div>
                   </div>
-
                   <div className="row">
                     <div className="col-md-6">
                       <label>Stock</label>
